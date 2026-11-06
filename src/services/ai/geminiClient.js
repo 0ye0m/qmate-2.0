@@ -310,15 +310,27 @@ export async function generateJSON(opts) {
   return repairJson(text);
 }
 
-/** Admin AI Health panel snapshot — key VALUES never included. */
+/** Admin AI Health panel snapshot — key VALUES never included.
+ *  PURE: no store writes here. Calling mirrorStats() (which setState()s)
+ *  from this getter caused an infinite re-render livelock that froze the
+ *  AI Health page. byKey is derived read-only for display. */
 export function healthSnapshot() {
-  mirrorStats();
+  const byKey = ENGINES.map((k) => ({
+    idx: k.idx,
+    type: k.type,
+    label: k.type === 'proxy' ? 'In-app AI engine' : `Gemini key ${k.idx + 1}`,
+    calls: k.calls,
+    failures: k.failures,
+    cooling: k.cooldownUntil > Date.now(),
+    cooldownLeftSec: Math.max(0, Math.ceil((k.cooldownUntil - Date.now()) / 1000)),
+  }));
   return {
     model: MODEL_CHAIN[0],
     configuredKeys: DIRECT_KEYS.length,
     engines: ENGINES.length,
     mode: aiMode(),
     ...stats,
+    byKey,
   };
 }
 

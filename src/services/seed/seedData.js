@@ -16,7 +16,7 @@ export const SEED_USERS = [
   },
   {
     key: 'student',
-    name: 'Om Mandwade',
+    name: 'Saloni Wankhade',
     email: 'student@qmate.local',
     password: 'Student@123',
     role: 'student',

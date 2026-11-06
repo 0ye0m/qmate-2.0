@@ -9,7 +9,7 @@ import * as simulator from '../services/simulator/demoSimulator';
 export const useUiStore = create(
   persist(
     (set, get) => ({
-      theme: 'system', // 'light' | 'dark' | 'system'
+      theme: 'dark', // 'light' | 'dark' | 'system' — dark by default (better contrast)
       lang: 'en',
       eco: false,
       sound: true,

@@ -10,7 +10,9 @@ import { useI18n } from '../../i18n/I18nProvider';
 export default function TokenRow({ token, feedback, onRate }) {
   const { t } = useI18n();
   const done = token.status === TOKEN_STATUS.COMPLETED;
-  const icon =
+  // capitalize so it renders as a JSX component (lucide icons are
+  // forwardRef objects — calling them as functions throws at runtime)
+  const Icon =
     token.status === TOKEN_STATUS.NO_SHOW || token.status === TOKEN_STATUS.SKIPPED
       ? XCircle
       : token.status === TOKEN_STATUS.CANCELLED
@@ -27,7 +29,7 @@ export default function TokenRow({ token, feedback, onRate }) {
         }`}
         aria-hidden="true"
       >
-        {icon({ size: 16 })}
+        <Icon size={16} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
