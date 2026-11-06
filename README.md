@@ -240,17 +240,5 @@ qmate-2.0/
 - **Component:** join-queue flow (checklist gate → token #101) and call-next
   flow (counter binding, waiting list, friendly empty errors)
 
-## ⚠️ Honest limitations
-
-- **Data is per-browser.** IndexedDB is local to each browser profile; two
-  different browsers/laptops do not share queues. This is the honest trade-off
-  of a zero-backend demo — the StorageAdapter/EventBus seams are exactly where
-  a backend plugs in later.
-- **Auth is simulated** (strong hashing, but the client holds the data).
-- **Gemini keys in a frontend are public** — restrict by HTTP-referrer, demo use.
-- Lighthouse ≥ 90 is enabled by design (code-split routes, PWA precache, a11y
-  pass) but the final score depends on the machine running the audit.
-
----
 
 Built as a college sustainability + engineering showcase. **Wait Less, Do More.** 🌱
