@@ -19,3 +19,6 @@ dev-dist/
 # logs
 *.log
 npm-debug.log*
+
+# sandbox installs with bun; npm users use package-lock.json
+bun.lock

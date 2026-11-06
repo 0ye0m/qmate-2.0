@@ -2,9 +2,15 @@
  * GEMINI CLIENT — browser-direct REST calls (no SDK), engineered for a
  * college demo that must never crash and never burn quota:
  *
- *  • Key pool (up to 3 keys) with round-robin + least-used selection.
- *  • HTTP 429/403/5xx or timeout → key cooldown (exponential backoff, 60 s
- *    base, 15 min cap) and instant retry on the next key; ≤3 attempts total.
+ *  • Engine pool: up to 3 owner keys (browser-direct Gemini REST) + the
+ *    in-app proxy engine (same-origin /api/ai route, server-side SDK).
+ *    Round-robin + least-used selection; ≤3 attempts per request.
+ *  • Model chain: configured model → known-good fallbacks, auto-advanced
+ *    when Google retires a model for new keys (HTTP 404).
+ *  • HTTP 429/403/5xx or timeout → engine cooldown (exponential backoff,
+ *    60 s base, 15 min cap) and instant retry on the next engine.
+ *  • "location is not supported" (400) cools ALL direct keys for this
+ *    network and hands over to the proxy engine.
  *  • 10 s AbortController timeout per attempt.
  *  • Response cache: djb2(prompt+model) → result, TTL 10 min, persisted.
  *  • In-flight de-duplication (identical prompts share one request).
@@ -13,20 +19,32 @@
  *    repairJson() — never a raw JSON.parse crash.
  *  • Health metrics mirrored into aiStore (never the key values).
  *
- * If no keys are configured, callers skip straight to their local fallback.
+ * If no engine succeeds, callers skip straight to their local fallback.
  */
 import { GEMINI, STORAGE_KEYS } from '../../utils/constants';
 import { hashString } from '../../utils/jsonRepair';
 import { useAiStore } from '../../store/aiStore';
 
-const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3.8-flash';
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
+const PROXY_URL = '/api/ai';
 
-const KEYS = [1, 2, 3]
+/** Configured model first, then known-good fallbacks (deduped). */
+const MODEL_CHAIN = [...new Set([
+  MODEL,
+  'gemini-3.8-flash',
+  'gemini-2.5-flash',
+  'gemini-flash-latest',
+])];
+
+const DIRECT_KEYS = [1, 2, 3]
   .map((i) => import.meta.env[`VITE_GEMINI_KEY_${i}`])
   .map((k) => (typeof k === 'string' ? k.trim() : ''))
   .filter(Boolean)
-  .map((key, idx) => ({ idx, key, calls: 0, failures: 0, cooldownUntil: 0 }));
+  .map((key, idx) => ({ idx, type: 'direct', key, calls: 0, failures: 0, cooldownUntil: 0 }));
+
+const PROXY_ENGINE = { idx: DIRECT_KEYS.length, type: 'proxy', key: null, calls: 0, failures: 0, cooldownUntil: 0 };
+const ENGINES = [...DIRECT_KEYS, PROXY_ENGINE];
 
 const stats = {
   callsMade: 0,
@@ -62,25 +80,30 @@ function persistCache() {
   }
 }
 loadCache();
+// Sync the AI store once at boot so status badges show the real mode
+// (online/fallback) instead of the store's initial 'off' placeholder.
+mirrorStats();
 
 export function aiConfigured() {
-  return KEYS.length > 0;
+  return ENGINES.length > 0;
 }
 
 export function aiMode() {
-  if (!KEYS.length) return 'off';
-  return KEYS.some((k) => k.cooldownUntil <= Date.now()) ? 'online' : 'fallback';
+  if (!ENGINES.length) return 'off';
+  return ENGINES.some((k) => k.cooldownUntil <= Date.now()) ? 'online' : 'fallback';
 }
 
 function mirrorStats() {
-  stats.byKey = KEYS.map((k) => ({
+  stats.byKey = ENGINES.map((k) => ({
     idx: k.idx,
+    type: k.type,
+    label: k.type === 'proxy' ? 'In-app AI engine' : `Gemini key ${k.idx + 1}`,
     calls: k.calls,
     failures: k.failures,
     cooling: k.cooldownUntil > Date.now(),
     cooldownLeftSec: Math.max(0, Math.ceil((k.cooldownUntil - Date.now()) / 1000)),
   }));
-  useAiStore.getState().sync({ ...stats, byKey: [...stats.byKey] }, aiMode(), MODEL);
+  useAiStore.getState().sync({ ...stats, byKey: [...stats.byKey] }, aiMode(), MODEL_CHAIN[0]);
 }
 
 function putCooldown(k) {
@@ -140,57 +163,110 @@ export async function generate({ prompt, system = '', json = true, temperature =
   if (running) return running;
 
   const task = (async () => {
-    if (!KEYS.length) {
-      const err = new Error('No Gemini keys configured');
+    if (!ENGINES.length) {
+      const err = new Error('No AI engines configured');
       err.code = 'AI_UNAVAILABLE';
       throw err;
     }
     await rateGate();
     let lastErr = null;
-    const ordered = KEYS.slice().sort(
+    let modelIdx = 0;
+    const ordered = ENGINES.slice().sort(
       (a, b) => a.cooldownUntil - b.cooldownUntil || a.calls - b.calls
     );
-    for (const k of ordered.slice(0, GEMINI.MAX_ATTEMPTS)) {
-      if (k.cooldownUntil > Date.now()) continue;
+    // Count real attempts (skipped/cooling engines don't consume the budget),
+    // so a mid-loop cooldown cascade can never cut off the proxy engine.
+    let attempts = 0;
+    for (const eng of ordered) {
+      if (eng.cooldownUntil > Date.now()) continue;
+      if (attempts >= GEMINI.MAX_ATTEMPTS) break;
+      attempts += 1;
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), GEMINI.TIMEOUT_MS);
       const t0 = Date.now();
       try {
-        k.calls += 1;
-        const res = await fetch(`${ENDPOINT}/${MODEL}:generateContent`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k.key },
-          body: JSON.stringify(buildBody({ prompt, system, json, temperature })),
-          signal: ctrl.signal,
-        });
-        clearTimeout(timer);
+        eng.calls += 1;
+        let text = '';
 
-        if (!res.ok) {
-          const raw = await res.text().catch(() => '');
-          let msg = `HTTP ${res.status}`;
-          try {
-            msg = JSON.parse(raw)?.error?.message || msg;
-          } catch {
-            /* keep plain */
+        if (eng.type === 'proxy') {
+          // Layer 2: same-origin in-app engine (server-side SDK, no keys exposed)
+          const res = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, system, json, temperature }),
+            signal: ctrl.signal,
+          });
+          clearTimeout(timer);
+          if (!res.ok) {
+            if (res.status === 429 || res.status >= 500) {
+              putCooldown(eng);
+              lastErr = new Error(`Proxy HTTP ${res.status}`);
+              continue;
+            }
+            throw new Error(`Proxy HTTP ${res.status}`);
           }
-          if (res.status === 429 || res.status === 403 || res.status >= 500) {
-            putCooldown(k);
-            lastErr = new Error(msg);
-            continue; // instant retry on the next key
+          const data = await res.json();
+          text = String(data?.text || '').trim();
+          if (!text) throw new Error('Empty response');
+        } else {
+          // Layer 1: browser-direct Gemini REST with the owner's key
+          const model = MODEL_CHAIN[Math.min(modelIdx, MODEL_CHAIN.length - 1)];
+          const res = await fetch(`${ENDPOINT}/${model}:generateContent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': eng.key },
+            body: JSON.stringify(buildBody({ prompt, system, json, temperature })),
+            signal: ctrl.signal,
+          });
+          clearTimeout(timer);
+
+          if (!res.ok) {
+            const raw = await res.text().catch(() => '');
+            let msg = `HTTP ${res.status}`;
+            try {
+              msg = JSON.parse(raw)?.error?.message || msg;
+            } catch {
+              /* keep plain */
+            }
+            // Model retired/unavailable for this key → advance the model chain
+            // (a key problem, not an engine problem — don't cooldown).
+            if (
+              res.status === 404 ||
+              /no longer available|model not found|not supported for new users/i.test(msg)
+            ) {
+              if (modelIdx < MODEL_CHAIN.length - 1) {
+                modelIdx += 1;
+                lastErr = new Error(msg);
+                continue;
+              }
+              throw new Error(msg);
+            }
+            // Region-blocked egress → direct keys can never work on this
+            // network. Cool them all and let the proxy engine take over.
+            if (/location is not supported/i.test(msg)) {
+              for (const e of ENGINES) if (e.type === 'direct') putCooldown(e);
+              lastErr = new Error(msg);
+              continue;
+            }
+            if (res.status === 429 || res.status === 403 || res.status >= 500) {
+              putCooldown(eng);
+              lastErr = new Error(msg);
+              continue; // instant retry on the next engine
+            }
+            throw new Error(msg); // other 400s → our prompt/config problem
           }
-          throw new Error(msg); // 400/404 → our prompt/config problem, don't burn keys
+
+          const data = await res.json();
+          const cand = data?.candidates?.[0];
+          text = (cand?.content?.parts || []).map((p) => p.text || '').join('').trim();
+          if (!text) {
+            if (cand?.finishReason && cand.finishReason !== 'STOP') {
+              throw new Error(`Blocked: ${cand.finishReason}`);
+            }
+            throw new Error('Empty response');
+          }
         }
 
-        const data = await res.json();
-        const cand = data?.candidates?.[0];
-        const text = (cand?.content?.parts || []).map((p) => p.text || '').join('').trim();
-        if (!text) {
-          if (cand?.finishReason && cand.finishReason !== 'STOP') {
-            throw new Error(`Blocked: ${cand.finishReason}`);
-          }
-          throw new Error('Empty response');
-        }
-        k.failures = 0;
+        eng.failures = 0;
         stats.callsMade += 1;
         stats.lastLatencyMs = Date.now() - t0;
         stats.lastError = null;
@@ -202,11 +278,11 @@ export async function generate({ prompt, system = '', json = true, temperature =
         clearTimeout(timer);
         const isAbort = err?.name === 'AbortError';
         if (isAbort) {
-          putCooldown(k);
-          lastErr = new Error('Gemini timeout (10s)');
+          putCooldown(eng);
+          lastErr = new Error('AI timeout (10s)');
         } else if (err instanceof TypeError) {
-          // network failure / offline → cool this key briefly and try next
-          putCooldown(k);
+          // network failure / offline → cool this engine briefly and try next
+          putCooldown(eng);
           lastErr = new Error('Network unreachable');
         } else {
           lastErr = err;
@@ -214,9 +290,9 @@ export async function generate({ prompt, system = '', json = true, temperature =
       }
     }
     stats.failures += 1;
-    stats.lastError = String(lastErr?.message || 'All AI keys failed');
+    stats.lastError = String(lastErr?.message || 'All AI engines failed');
     mirrorStats();
-    throw lastErr || new Error('All AI keys failed');
+    throw lastErr || new Error('All AI engines failed');
   })();
 
   inflight.set(cacheKey, task);
@@ -238,8 +314,9 @@ export async function generateJSON(opts) {
 export function healthSnapshot() {
   mirrorStats();
   return {
-    model: MODEL,
-    configuredKeys: KEYS.length,
+    model: MODEL_CHAIN[0],
+    configuredKeys: DIRECT_KEYS.length,
+    engines: ENGINES.length,
     mode: aiMode(),
     ...stats,
   };
@@ -251,4 +328,4 @@ export function clearAiCache() {
   mirrorStats();
 }
 
-export const geminiModel = MODEL;
+export const geminiModel = MODEL_CHAIN[0];

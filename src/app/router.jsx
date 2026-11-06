@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, createHashRouter, RouterProvider } from 'react-router-dom';
 import AppShell from '../components/layout/AppShell';
 import { RequireAuth, RequireRole, RoleRedirect } from './guards';
 import { BootLoader } from './BootLoader';
@@ -29,7 +29,7 @@ const AuditLog = lazy(() => import('../pages/admin/AuditLog'));
 
 const wrap = (el) => <Suspense fallback={<BootLoader />}>{el}</Suspense>;
 
-const router = createBrowserRouter([
+const routes = [
   { path: '/', element: wrap(<Landing />) },
   { path: '/login', element: wrap(<Login />) },
   { path: '/signup', element: wrap(<Signup />) },
@@ -69,7 +69,15 @@ const router = createBrowserRouter([
     ],
   },
   { path: '*', element: wrap(<NotFound />) },
-]);
+];
+
+/**
+ * Router mode: browser history for a normal server, hash history when the
+ * app is served as static files from a sub-path (e.g. the sandbox preview at
+ * /qmate/) so deep links and refreshes always work. Set VITE_ROUTER_MODE=hash.
+ */
+const useHash = import.meta.env.VITE_ROUTER_MODE === 'hash';
+const router = useHash ? createHashRouter(routes) : createBrowserRouter(routes);
 
 export function AppRouter() {
   return <RouterProvider router={router} />;

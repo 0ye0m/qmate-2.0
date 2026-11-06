@@ -3,7 +3,11 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // Q-Mate 2.0 — pure frontend build. No server, no proxy, no backend.
+// base '/qmate/' → the built bundle can be dropped into any static host
+// sub-path (the sandbox preview serves it from Next.js /public/qmate/).
+// Override with VITE_BASE=/ to build for a domain root.
 export default defineConfig({
+  base: process.env.VITE_BASE || '/qmate/',
   plugins: [
     react(),
     VitePWA({

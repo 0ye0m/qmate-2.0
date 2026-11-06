@@ -80,7 +80,9 @@ export default function QueueConsole() {
     useCallback(
       (msg) => {
         if (!msg.payload || msg.payload.queueId === queueId) {
-          if ([EVENTS.TOKEN_CALLED, EVENTS.TOKEN_SERVING, EVENTS.TOKEN_COMPLETED, EVENTS.TOKEN_SKIPPED, EVENTS.TOKEN_NO_SHOW, EVENTS.TOKEN_UPDATED, EVENTS.TOKEN_RECALLED, EVENTS.QUEUE_STATUS, EVENTS.QUEUE_PAUSED, EVENTS.QUEUE_RESUMED].includes(msg.type)) {
+          // TOKEN_ISSUED / TOKEN_CANCELLED matter as much as counter actions:
+          // remote joins/leaves from student tabs must refresh this list too.
+          if ([EVENTS.TOKEN_ISSUED, EVENTS.TOKEN_CANCELLED, EVENTS.TOKEN_CALLED, EVENTS.TOKEN_SERVING, EVENTS.TOKEN_COMPLETED, EVENTS.TOKEN_SKIPPED, EVENTS.TOKEN_NO_SHOW, EVENTS.TOKEN_UPDATED, EVENTS.TOKEN_RECALLED, EVENTS.QUEUE_STATUS, EVENTS.QUEUE_PAUSED, EVENTS.QUEUE_RESUMED].includes(msg.type)) {
             reload();
           }
         }

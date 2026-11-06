@@ -89,12 +89,12 @@ export default function AiHealth() {
         </div>
 
         {(snapshot.byKey || []).length > 0 && (
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {snapshot.byKey.map((k) => (
               <div key={k.idx} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
                 <p className="flex items-center gap-1.5 text-sm font-extrabold text-slate-800 dark:text-slate-100">
                   <KeyRound size={13} aria-hidden="true" />
-                  {t('ai.keyStatus', { n: k.idx + 1 })}
+                  {k.label || t('ai.keyStatus', { n: k.idx + 1 })}
                 </p>
                 <p className="mt-1.5">
                   {k.cooling ? (

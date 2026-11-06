@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 import { useUiStore } from '../store/uiStore';
 import en from './en.json';
 import hi from './hi.json';
@@ -22,6 +22,11 @@ function translate(lang, key, vars) {
 export function I18nProvider({ children }) {
   const lang = useUiStore((s) => s.lang);
   const setLang = useUiStore((s) => s.setLang);
+
+  // Keep the document language in sync for screen readers (WCAG 3.1.1).
+  useEffect(() => {
+    document.documentElement.lang = lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : 'en';
+  }, [lang]);
 
   const t = useCallback((key, vars) => translate(lang, key, vars), [lang]);
   const value = useMemo(() => ({ lang, setLang, t }), [lang, setLang, t]);

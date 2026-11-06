@@ -140,11 +140,19 @@ the semantics of `queueService` (already the single transactional gateway).
 ## 🤖 Gemini integration (optional, hardened)
 
 `src/services/ai/geminiClient.js` — plain `fetch` to the Gemini REST API
-(model from `VITE_GEMINI_MODEL`, default `gemini-2.5-flash`):
+(model from `VITE_GEMINI_MODEL`, default `gemini-3.8-flash`, with an automatic
+model chain `gemini-3.8-flash → gemini-2.5-flash → gemini-flash-latest` that
+advances when Google retires a model for new keys):
 
-- Key pool (up to 3) with round-robin + least-used selection
+- **Engine pool:** up to 3 owner keys (browser-direct Gemini REST) **+ the
+  in-app AI engine** (`/api/ai`, same-origin route powered server-side by the
+  z-ai SDK). Region-blocked networks ("location is not supported") cool all
+  direct keys and hand over to the in-app engine automatically — AI keeps
+  working even where Google's API is unreachable.
+- Key pool round-robin + least-used selection
 - 429 / 403 / 5xx / timeout → exponential **cooldown (60 s → 15 min)** and
-  instant retry on the next key (≤ 3 attempts), then graceful **local fallback**
+  instant retry on the next engine (≤ 3 real attempts), then graceful
+  **local fallback**
 - 10 s `AbortController` timeout, response **cache** (prompt-hash → TTL 10 min),
   in-flight **de-duplication**, **per-minute rate limiter** (10/min)
 - Strict JSON prompts parsed through `repairJson()` (fences, trailing commas,
@@ -158,6 +166,11 @@ the semantics of `queueService` (already the single transactional gateway).
 **Key security (read this):** keys shipped in a frontend bundle are visible to
 anyone who opens DevTools. Restrict each key by **HTTP-referrer** in Google AI
 Studio and use demo/college keys only. Never commit `.env` (it is gitignored).
+
+**Hosting note:** the sandbox preview serves the built bundle from a Next.js
+app at `/qmate/` with `VITE_ROUTER_MODE=hash` (deep links work from any static
+path) and `VITE_PWA=off` (cache-clean iterations). Build for a domain root with
+`VITE_BASE=/ VITE_ROUTER_MODE=browser VITE_PWA=on npx vite build`.
 
 ### The "AI Health" admin panel shows
 per-key status (active / cooling Xs), calls, cache hits, failures, last

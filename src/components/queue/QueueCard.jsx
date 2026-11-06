@@ -15,11 +15,11 @@ export default function QueueCard({ queue, stat, bestWindow, disabledReason, onJ
   const joinable = status === 'active' && !disabledReason;
 
   return (
-    <div className="group flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-slate-700/60 dark:bg-slate-800/70">
-      <div className="mb-2 flex items-start justify-between gap-2">
+    <div className="group flex h-full min-w-0 flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-slate-700/60 dark:bg-slate-800/70">
+      <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="truncate text-base font-bold text-slate-900 dark:text-white">{queue.name}</h3>
-          <p className="text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">
+          <p className="truncate text-xs font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">
             {queue.department}
           </p>
         </div>
