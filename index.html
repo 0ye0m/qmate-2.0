@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Q-Mate 2.0 — Sustainable Smart Campus Queue Platform. Virtual tokens, live ETAs, zero paper. Wait Less, Do More." />
+    <meta name="theme-color" content="#0d9488" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <title>Q-Mate 2.0 — Wait Less, Do More.</title>
+    <style>
+      #boot-splash {
+        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        background: #f0fdfa; color: #0f766e; font-family: system-ui, sans-serif;
+        flex-direction: column; gap: 12px; z-index: 9999; transition: opacity .3s;
+      }
+      #boot-splash .ring {
+        width: 44px; height: 44px; border-radius: 9999px;
+        border: 4px solid #99f6e4; border-top-color: #0d9488; animation: bootspin 0.9s linear infinite;
+      }
+      @keyframes bootspin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="boot-splash" role="status" aria-label="Loading Q-Mate">
+      <div class="ring" aria-hidden="true"></div>
+      <div style="font-weight: 700; letter-spacing: 0.02em;">Q-Mate 2.0</div>
+      <div style="font-size: 12px; opacity: 0.7;">Wait Less, Do More.</div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
