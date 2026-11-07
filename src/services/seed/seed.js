@@ -136,7 +136,27 @@ export function ensureSeeded() {
   if (!seedPromise) {
     seedPromise = withLock('campus-seed', async () => {
       const existing = await storage.get('meta', 'seedVersion');
-      if (existing?.value === SEED_VERSION) return false;
+      if (existing?.value === SEED_VERSION) {
+        // Integrity gate: an interrupted or interleaved seed (tab closed
+        // mid-seed while its in-flight writes keep landing) can leave the
+        // version stamp behind on partial data. Verify the campus is really
+        // complete before trusting the stamp; otherwise rebuild.
+        try {
+          const [userCount, queueCount, tokenCount] = await Promise.all([
+            storage.count('users'),
+            storage.count('queues'),
+            storage.count('tokens'),
+          ]);
+          const complete =
+            userCount >= SEED_USERS.length &&
+            queueCount >= SEED_QUEUES.length &&
+            tokenCount >= 150;
+          if (complete) return false;
+          console.warn('[seed] version stamp present but campus data incomplete — rebuilding');
+        } catch {
+          return false; // counts unavailable — trust the stamp
+        }
+      }
       return seedNow();
     }).catch((err) => {
       seedPromise = null; // allow a retry on failure
