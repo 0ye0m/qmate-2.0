@@ -1,22 +1,19 @@
+import { MongoRestAdapter } from './restAdapter';
 import { DexieStorageAdapter } from './dexieAdapter';
 import { LocalStorageAdapter } from './localStorageAdapter';
 import { StorageAdapter } from './StorageAdapter';
 
 /**
- * Adapter factory. Prefers IndexedDB (Dexie); falls back to localStorage
- * when IndexedDB is missing/blocked. The rest of the app imports `storage`
- * and never cares which engine is underneath.
+ * Adapter factory — Q-Mate 2.0 now has a real persistence tier:
+ *   1. MongoDB Atlas via the Express data API (cloud, shared across every
+ *      device and browser — the primary store),
+ *   2. IndexedDB (Dexie) — automatic offline fallback when the API or
+ *      Atlas cannot be reached,
+ *   3. localStorage — last resort for blocked environments.
+ * The rest of the app imports `storage` and never cares which engine is
+ * underneath.
  */
-export const storage = (() => {
-  try {
-    if (typeof indexedDB !== 'undefined' && indexedDB !== null) {
-      return new DexieStorageAdapter();
-    }
-  } catch {
-    /* fall through */
-  }
-  return new LocalStorageAdapter();
-})();
+export const storage = new MongoRestAdapter();
 
 export async function initStorage() {
   try {
@@ -28,4 +25,4 @@ export async function initStorage() {
   }
 }
 
-export { StorageAdapter, DexieStorageAdapter, LocalStorageAdapter };
+export { StorageAdapter, MongoRestAdapter, DexieStorageAdapter, LocalStorageAdapter };

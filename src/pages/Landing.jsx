@@ -215,7 +215,7 @@ export default function Landing() {
       </section>
 
       <footer className="border-t border-slate-200/70 py-6 text-center text-xs text-slate-400 dark:border-slate-700/60 dark:text-slate-500">
-        {APP.name} · {APP.tagline} · a zero-backend, offline-first PWA demo
+        {APP.name} · {APP.tagline} · a cloud-synced, offline-ready PWA
       </footer>
     </div>
   );

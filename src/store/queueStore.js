@@ -8,6 +8,7 @@ import { eventBus, EVENTS } from '../services/realtime/EventBus';
 import * as queueService from '../services/queue/queueService';
 import { recent as recentAnnouncements } from '../services/queue/announcementService';
 import { useAuthStore } from './authStore';
+import { storage } from '../services/storage';
 
 const RELEVANT = new Set([
   EVENTS.TOKEN_ISSUED,
@@ -36,6 +37,8 @@ const RELEVANT = new Set([
 let refreshTimer = null;
 let pending = { queues: false, mine: false, announcements: false };
 let unsubEvents = null;
+let cloudPollTimer = null;
+const CLOUD_POLL_MS = 10000;
 
 export const useQueueStore = create((set, get) => ({
   queues: [],
@@ -116,7 +119,10 @@ export const useQueueStore = create((set, get) => ({
   },
 }));
 
-/** Attach/detach the global event listener once the user is known. */
+/** Attach/detach the global event listener once the user is known.
+ *  Cloud mode (MongoDB Atlas): BroadcastChannel only reaches tabs in this
+ *  browser, so a gentle poll folds in actions taken on other devices.
+ *  Local Dexie mode stays purely event-driven. */
 export function bindQueueStore() {
   if (unsubEvents) unsubEvents();
   unsubEvents = eventBus.on((msg) => {
@@ -125,6 +131,15 @@ export function bindQueueStore() {
     }
     useQueueStore.getState().handleEvent(msg);
   });
+  if (storage.kind === 'mongodb' && !cloudPollTimer && typeof document !== 'undefined') {
+    cloudPollTimer = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      useQueueStore
+        .getState()
+        .refresh({ queues: true, mine: true, announcements: true })
+        .catch(() => {});
+    }, CLOUD_POLL_MS);
+  }
   return () => {
     if (unsubEvents) unsubEvents();
     unsubEvents = null;

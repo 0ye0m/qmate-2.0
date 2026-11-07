@@ -2,12 +2,21 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// Q-Mate 2.0 — pure frontend build. No server, no proxy, no backend.
-// base '/qmate/' → the built bundle can be dropped into any static host
-// sub-path (the sandbox preview serves it from Next.js /public/qmate/).
-// Override with VITE_BASE=/ to build for a domain root.
+// Q-Mate 2.0 — React 18 + Vite frontend with an Express + MongoDB Atlas
+// data API behind it. base '/qmate/' → the built bundle can be dropped into
+// any static host sub-path (the sandbox preview serves it from Next.js
+// /public/qmate/). Override with VITE_BASE=/ to build for a domain root.
 export default defineConfig({
   base: process.env.VITE_BASE || '/qmate/',
+  server: {
+    proxy: {
+      // `npm run dev:all` starts the Express data API on :4000 next to Vite.
+      '/api/db': {
+        target: process.env.VITE_API_PROXY || 'http://localhost:4000',
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

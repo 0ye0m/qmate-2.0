@@ -2,11 +2,13 @@
 
 > **Wait Less, Do More.** — a campus digital queue system (admissions, exam forms,
 > fees, library, certificates, labs, canteen) that replaces physical lines with
-> virtual tokens. 100% frontend. Zero backend. Zero servers. Zero paper.
+> virtual tokens. Cloud-synced, offline-ready, zero paper.
 
-**Pure React 18 + Vite SPA.** All logic, auth, "real-time" sync and AI calls run
-in the browser. There is no backend anywhere in this project — nothing to deploy,
-nothing that can sleep.
+**React 18 + Vite SPA · Express data API · MongoDB Atlas.** Queue data lives in
+a MongoDB Atlas cluster behind a small Express REST API (`server/`), so every
+student, admin and device shares the same live campus. If the API or Atlas is
+unreachable, the app transparently falls back to IndexedDB (Dexie) and keeps
+working offline — the data layer is a pluggable adapter, the UI never changes.
 
 ---
 
@@ -14,20 +16,32 @@ nothing that can sleep.
 
 ```bash
 npm install
-npm run dev          # → http://localhost:5173
+cp .env.example .env   # paste your MONGODB_URI (Atlas) + optional Gemini keys
+npm run dev:all        # Express API :4000 + Vite dev server :5173
+# → http://localhost:5173
 ```
+
+**MongoDB Atlas setup (one time):** create a free cluster at
+[mongodb.com/atlas](https://www.mongodb.com/atlas) → *Database Access*: add a
+database user → *Network Access*: allow your IP (or `0.0.0.0/0` for a demo) →
+copy the SRV connection string into `MONGODB_URI` in `.env`. First boot seeds
+the whole campus into the cloud automatically. **No `MONGODB_URI`?** The app
+still runs 100% locally on IndexedDB — it detects the missing API and falls
+back by itself.
 
 Optional AI (the app is fully functional without it):
 
 ```bash
-cp .env.example .env # then paste your Gemini keys into VITE_GEMINI_KEY_1..3
+# paste your Gemini keys into VITE_GEMINI_KEY_1..3 in .env
 ```
 
 | Script | What it does |
 |---|---|
-| `npm run dev` | Vite dev server (HMR) |
+| `npm run dev:all` | Express data API (:4000) + Vite dev server (HMR) together |
+| `npm run server` | Express data API only (MongoDB Atlas) |
+| `npm run dev` | Vite dev server only (proxies `/api/db` → :4000) |
 | `npm run build` | Production build + PWA service worker |
-| `npm run preview` | Serve the production build (installable PWA, offline-first) |
+| `npm run preview` | Serve the production build (installable PWA) |
 | `npm run test` | Vitest suite (44 tests: unit + component) |
 | `npm run test:watch` | Vitest in watch mode |
 
@@ -39,13 +53,14 @@ cp .env.example .env # then paste your Gemini keys into VITE_GEMINI_KEY_1..3
 | Student | `student@qmate.local` | `Student@123` |
 
 Plus 8 simulator students (`sim1@qmate.local` … `sim8@qmate.local`) used by the
-Demo Simulator. First launch seeds a full 3-day campus: 7 queues, ~300 historical
-tokens (analytics, prediction EWMA, green stats), live waiting/called tokens,
-prebooks, feedback, announcements and an audit trail.
+Demo Simulator. First launch seeds a full 3-day campus into **MongoDB Atlas**:
+7 queues, ~600 historical + live tokens (analytics, prediction EWMA, green
+stats), prebooks, feedback, announcements and an audit trail. Passwords are
+PBKDF2-hashed before they ever reach the database.
 
-> ⚠️ Auth is client-side and simulated (PBKDF2-hashed passwords, expiring
-> sessions in IndexedDB, 5-strikes → 15-min lockout). It is demonstration-grade
-> security, not production authentication.
+> ⚠️ Auth is simulated client-side (PBKDF2-hashed passwords, expiring sessions,
+> 5-strikes → 15-min lockout) — demonstration-grade security, not production
+> authentication.
 
 ---
 
@@ -68,20 +83,22 @@ the student and the other the admin in the same browser:
 8. Toggle the **Demo Simulator** on the admin dashboard to keep the campus
    moving during a presentation.
 
-**Multiple browsers/devices:** each browser has its own IndexedDB, so data is
-per-browser (see Limitations). BroadcastChannel syncs all *tabs of the same
-browser* instantly.
+**Multiple browsers/devices:** with the MongoDB data API running, every browser
+and device shares the same Atlas data — a student can join from their phone and
+watch the admin call their token from another laptop. A light poll (10 s) folds
+other devices' actions in; BroadcastChannel still syncs tabs of the same
+browser instantly.
 
 ---
 
-## 🔄 How "real-time" works without a backend
+## 🔄 How real-time sync works
 
 ```
 mutation (any tab)                          receivers (all tabs)
 ┌────────────────────────────┐
 │ queueService.*             │
 │  1. navigator.locks mutex  │  ← cross-tab write lock (localStorage spin-lock fallback)
-│  2. Dexie transaction      │  ← atomic multi-table write (IndexedDB)
+│  2. atomic transaction     │  ← MongoDB multi-doc txn (cloud) / Dexie txn (offline fallback)
 │  3. COMMIT                 │
 │  4. eventBus.publish(...) ─┼──BroadcastChannel──▶ other tabs: store refresh
 │                            ├──localStorage 'storage' event──▶ BC-less browsers
@@ -92,29 +109,33 @@ mutation (any tab)                          receivers (all tabs)
 - **EventBus** (`src/services/realtime/EventBus.js`) publishes typed events
   (`TOKEN_ISSUED`, `TOKEN_CALLED`, `TOKEN_COMPLETED`, `QUEUE_PAUSED`,
   `COUNTER_CLOSED`, `ANNOUNCEMENT`, …). Subscribers never poll.
-- **Concurrency:** every mutation runs `withLock(queueKey)` + one Dexie
-  transaction, so two tabs can never mint the same token number or double-book
-  a counter (covered by `tokenServiceConcurrency.test.js` — 5 parallel joins
-  produce exactly 101–105).
+- **Concurrency:** every mutation runs `withLock(queueKey)` + one atomic
+  transaction (MongoDB multi-document transaction in cloud mode, Dexie
+  transaction offline), so two tabs — or two devices — can never mint the same
+  token number or double-book a counter (covered by
+  `tokenServiceConcurrency.test.js` — 5 parallel joins produce exactly 101–105).
 - **Notifications are event-driven** (token near / called / counter change /
   paused / closed / Leave-Now) — the failed "poll every 3 minutes" is gone.
 
-## 🗄️ Pluggable architecture (backend migration path)
+## 🗄️ Pluggable architecture (three storage tiers)
 
-The UI never touches Dexie directly — it talks to the `StorageAdapter`
+The UI never touches a database directly — it talks to the `StorageAdapter`
 interface (`src/services/storage/StorageAdapter.js`):
 
 ```
-StorageAdapter (interface)
-├── DexieStorageAdapter     ← default (IndexedDB)
-└── LocalStorageAdapter     ← automatic fallback
+StorageAdapter (interface) — the ONLY data-access contract in Q-Mate 2.0
+├── MongoRestAdapter        ← primary: Express REST API + MongoDB Atlas (cloud,
+│                             shared across devices, atomic multi-document
+│                             transactions, auto-seeding)
+├── DexieStorageAdapter     ← automatic offline fallback (IndexedDB)
+└── LocalStorageAdapter     ← last resort (blocked IndexedDB)
 ```
 
-To move to a real backend later: implement `RestStorageAdapter` with the same
-methods (`get/getAll/put/bulkPut/delete/transaction` → HTTP), swap the factory
-in `src/services/storage/index.js`, and re-point the EventBus at a WebSocket.
-**Zero UI changes.** The README of a future backend only needs to reimplement
-the semantics of `queueService` (already the single transactional gateway).
+The `MongoRestAdapter` boots with a `/api/db/health` ping; if the API or Atlas
+cannot be reached it swaps to Dexie invisibly — same methods, same table
+handles, same transaction semantics (`transaction()` buffers writes and
+commits them as **one MongoDB multi-document transaction** with
+`snapshot` read-concern and `majority` write-concern).
 
 ---
 
@@ -133,7 +154,7 @@ the semantics of `queueService` (already the single transactional gateway).
 | QR check-in + no-show grace timers (fewer wasted trips) | ✅ | ✅ | | ✅ |
 | Document checklist before visit (no re-queueing) | | ✅ | | ✅ |
 | Printable Sustainability Report (NAAC / green-audit) | | | ✅ | ✅ |
-| Pluggable StorageAdapter / EventBus, lazy routes, Lighthouse-minded build | ✅ | | | |
+| Pluggable StorageAdapter (MongoDB Atlas cloud + offline fallback) / EventBus, lazy routes | ✅ | | | |
 
 ---
 
@@ -183,7 +204,10 @@ latency/error, a one-click test call and cache clear — **never the key values*
 ```
 qmate-2.0/
 ├── index.html · vite.config.js · tailwind.config.js · postcss.config.js
-├── .env.example              # key slots (never commit .env)
+├── .env.example              # MONGODB_URI + key slots (never commit .env)
+├── server/                   # Express data API (MongoDB Atlas)
+│   ├── index.js              #   REST endpoints + atomic transactions + indexes
+│   └── mongo.js              #   connection singleton
 ├── public/                   # PWA icons + favicon
 └── src/
     ├── app/                  # router (lazy routes), guards, boot loader
@@ -195,7 +219,7 @@ qmate-2.0/
     │   └── ErrorBoundary.jsx
     ├── features/             # (reserved for feature modules)
     ├── services/
-    │   ├── storage/          # StorageAdapter + Dexie + localStorage fallback
+    │   ├── storage/          # StorageAdapter: Mongo REST → Dexie → localStorage
     │   ├── realtime/         # EventBus (BroadcastChannel + storage event)
     │   ├── concurrency/      # Web Locks mutex (+ localStorage spin-lock)
     │   ├── auth/             # PBKDF2 passwords, sessions, lockout, admin user mgmt
