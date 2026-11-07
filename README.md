@@ -2,13 +2,22 @@
 
 > **Wait Less, Do More.** — a campus digital queue system (admissions, exam forms,
 > fees, library, certificates, labs, canteen) that replaces physical lines with
-> virtual tokens. Cloud-synced, offline-ready, zero paper.
+> virtual tokens. One shared live campus for every student and admin. Zero paper.
 
-**React 18 + Vite SPA · Express data API · MongoDB Atlas.** Queue data lives in
-a MongoDB Atlas cluster behind a small Express REST API (`server/`), so every
-student, admin and device shares the same live campus. If the API or Atlas is
-unreachable, the app transparently falls back to IndexedDB (Dexie) and keeps
-working offline — the data layer is a pluggable adapter, the UI never changes.
+**React 18 + Vite SPA · Express-compatible REST data API · MongoDB Atlas.**
+Queue data lives in the owner's MongoDB Atlas cluster behind a small REST data
+API, so every student, admin and device shares the same live campus. The data
+API ships in two interchangeable form factors:
+
+- **Embedded (default, used by the hosted deployment)** — the same application
+  server that serves the React build also serves `/api/db/*` and holds the
+  Atlas connection. One process, one deployable unit.
+- **Standalone** — `server/index.js`, the same REST contract as a standalone
+  Express + MongoDB service for API-only or local hosting (`npm run dev:all`).
+
+If the data API or Atlas is unreachable, the client transparently falls back
+to IndexedDB (Dexie) and keeps working offline — the data layer is a pluggable
+adapter, the UI never changes.
 
 ---
 
@@ -40,8 +49,8 @@ Optional AI (the app is fully functional without it):
 | `npm run dev:all` | Express data API (:4000) + Vite dev server (HMR) together |
 | `npm run server` | Express data API only (MongoDB Atlas) |
 | `npm run dev` | Vite dev server only (proxies `/api/db` → :4000) |
-| `npm run build` | Production build + PWA service worker |
-| `npm run preview` | Serve the production build (installable PWA) |
+| `npm run build` | Production build (add `VITE_PWA=on` for the installable offline PWA) |
+| `npm run preview` | Serve the production build |
 | `npm run test` | Vitest suite (44 tests: unit + component) |
 | `npm run test:watch` | Vitest in watch mode |
 

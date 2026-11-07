@@ -55,7 +55,7 @@ async function createUser(def) {
   return user;
 }
 
-function fakeUser(nameIdx, dept) {
+function simUser(nameIdx, dept) {
   return {
     id: uid('usr-'),
     name: NAME_POOL[nameIdx % NAME_POOL.length],
@@ -93,7 +93,7 @@ function generateDayHistory({ queue, counters, dayStartTs, nextNumber, untilTs =
         number: num,
         queueId: queue.id,
         queueName: queue.name,
-        userId: owner ? owner.id : fakeUser(randInt(rng, 0, 19), pick(rng, userDirs)).id,
+        userId: owner ? owner.id : simUser(randInt(rng, 0, 19), pick(rng, userDirs)).id,
         department: pick(rng, userDirs),
         year: randInt(rng, 1, 4),
         status,

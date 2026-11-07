@@ -2,7 +2,7 @@ import { STORAGE_KEYS } from '../../utils/constants';
 import { uid } from '../../utils/id';
 
 /**
- * EventBus — the "realtime" backbone (zero backend, zero polling).
+ * EventBus — the realtime backbone (event-driven, no polling loops).
  *
  * Every mutation publishes a typed event. Delivery channels:
  *   1. BroadcastChannel → instant delivery to every other tab of this app.

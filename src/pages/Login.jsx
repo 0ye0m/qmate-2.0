@@ -72,7 +72,7 @@ export default function Login() {
             <li className="flex items-center gap-2">🌱 Every token saves paper, fuel & hours</li>
           </ul>
         </div>
-        <p className="text-xs text-brand-300">Zero-backend demo · data stays in this browser</p>
+        <p className="text-xs text-brand-300">{APP.name} · {APP.tagline}</p>
       </div>
 
       {/* form side */}

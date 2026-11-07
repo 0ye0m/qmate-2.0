@@ -75,7 +75,7 @@ export default function Signup() {
             🌱 {t('landing.metricSheets')} · {t('landing.metricCo2')} · {t('landing.metricHours')}
           </p>
         </div>
-        <p className="text-xs text-brand-300">Zero-backend demo · data stays in this browser</p>
+        <p className="text-xs text-brand-300">{APP.name} · {APP.tagline}</p>
       </div>
 
       <div className="flex items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-900">

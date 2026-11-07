@@ -108,7 +108,7 @@ export default function Sidebar({ open, onClose }) {
         </nav>
 
         <div className="border-t border-slate-200/70 px-5 py-4 text-xs text-slate-400 dark:border-slate-700/60 dark:text-slate-500">
-          {APP.name} · cloud-synced PWA
+          {APP.name} · {APP.tagline}
         </div>
       </aside>
     </>

@@ -1,13 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { registerSW } from 'virtual:pwa-register';
 import './index.css';
 
-// Service worker registration can be disabled per-environment (VITE_PWA=off)
-// to keep hosted previews cache-clean while iterating. Default: on.
-if (import.meta.env.VITE_PWA !== 'off') {
-  registerSW({ immediate: true });
+// Installable offline mode is opt-in (VITE_PWA=on builds embed the PWA
+// plugin and the virtual:pwa-register module). Hosted builds ship without
+// a service worker so every visit gets the freshest bundle.
+if (import.meta.env.VITE_PWA === 'on') {
+  import('virtual:pwa-register').then(({ registerSW }) => registerSW({ immediate: true }));
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
