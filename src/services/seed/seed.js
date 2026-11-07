@@ -21,6 +21,7 @@ import {
   TOKEN_NUMBER_START,
   PRIORITY_TYPES,
 } from '../../utils/constants';
+import { dateStrOf } from '../../utils/format';
 import { SEED_USERS, SEED_QUEUES, NAME_POOL, FEEDBACK_POOL } from './seedData';
 
 const rng = mulberry32(20260206);
@@ -327,7 +328,7 @@ async function seedNow() {
   // 6) prebooks: the demo student has one tomorrow (Exam Cell, off-peak)
   const examQ = queues.find((x) => x.def.key === 'exf')?.q;
   if (examQ) {
-    const tomorrow = new Date(dayStart(1)).toISOString().slice(0, 10);
+    const tomorrow = dateStrOf(dayStart(1)); // local calendar date (never UTC-shifted)
     await storage.put('prebooks', {
       id: uid('pb-'),
       queueId: examQ.id,
@@ -340,7 +341,7 @@ async function seedNow() {
       createdAt: now,
     });
   }
-  const todayStr = new Date(dayStart(0)).toISOString().slice(0, 10);
+  const todayStr = dateStrOf(dayStart(0));
   const feeQ = queues.find((x) => x.def.key === 'fee')?.q;
   if (feeQ) {
     for (let i = 0; i < 3; i++) {

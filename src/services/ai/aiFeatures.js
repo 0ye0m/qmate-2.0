@@ -8,7 +8,7 @@ import { aiConfigured, aiMode } from './geminiClient';
 import { repairJson } from '../../utils/jsonRepair';
 import * as P from './prompts';
 import { DEPARTMENTS } from '../../utils/constants';
-import { todayStr, hhmmToMinutes, minutesToHHmm } from '../../utils/format';
+import { todayStr, dateStrOf, hhmmToMinutes, minutesToHHmm } from '../../utils/format';
 
 const ok = (data) => ({ ...data, mode: 'online' });
 const fb = (data, error = null) => ({ ...data, mode: 'fallback', error });
@@ -181,7 +181,7 @@ export function localParseQueue(text) {
   if (/\btomorrow|कल|उद्या/.test(s)) {
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    out.date = d.toISOString().slice(0, 10);
+    out.date = dateStrOf(d.getTime()); // local calendar date (never UTC-shifted)
   } else if (/\btoday|आज/.test(s)) {
     out.date = todayStr();
   }

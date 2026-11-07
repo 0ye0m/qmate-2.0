@@ -41,10 +41,10 @@ export default function Login() {
 
   const fill = (who) => {
     if (who === 'admin') {
-      setEmail('admin@qmate.local');
+      setEmail('saloniwankhade19@gmail.com');
       setPassword('Admin@123');
     } else {
-      setEmail('student@qmate.local');
+      setEmail('saloniwankhade19@gmail.com');
       setPassword('Student@123');
     }
     setError(null);
@@ -151,7 +151,7 @@ export default function Login() {
             </Link>
           </p>
           <p className="mt-2 text-center text-xs text-slate-400 dark:text-slate-500">
-            student@qmate.local / Student@123 · admin@qmate.local / Admin@123
+            saloniwankhade19@gmail.com · Student@123 (student) · Admin@123 (admin)
           </p>
         </div>
       </div>

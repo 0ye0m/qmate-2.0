@@ -2,7 +2,6 @@
   "app.name": "Q-Mate 2.0",
   "app.tagline": "कम इंतज़ार, ज़्यादा काम।",
   "app.sub": "टिकाऊ स्मार्ट-कैंपस कतारें — वर्चुअल टोकन, लाइव ETA, शून्य कागज़।",
-
   "nav.dashboard": "डैशबोर्ड",
   "nav.activeQueues": "चालू कतारें",
   "nav.myQueues": "मेरी कतारें",
@@ -20,7 +19,6 @@
   "nav.auditLog": "ऑडिट लॉग",
   "nav.logout": "लॉग आउट",
   "nav.menu": "मेनू",
-
   "common.loading": "लोड हो रहा है…",
   "common.retry": "पुनः प्रयास",
   "common.save": "सहेजें",
@@ -62,7 +60,6 @@
   "common.you": "आप",
   "common.view": "देखें",
   "common.copied": "कॉपी हो गया",
-
   "auth.loginTitle": "वापसी पर स्वागत है",
   "auth.loginSub": "कतारें प्रबंधित करने के लिए लॉग इन करें।",
   "auth.signupTitle": "अपना खाता बनाएं",
@@ -80,7 +77,6 @@
   "auth.demoAdmin": "एडमिन डेमो भरें",
   "auth.demoStudent": "स्टूडेंट डेमो भरें",
   "auth.passwordMismatch": "पासवर्ड मेल नहीं खाते",
-
   "errors.INVALID_CREDENTIALS": "ईमेल या पासवर्ड गलत है। फिर कोशिश करें।",
   "errors.ACCOUNT_LOCKED": "5 बार गलत प्रयास के बाद खाता लॉक है। {min} मिनट में फिर कोशिश करें।",
   "errors.EMAIL_TAKEN": "यह ईमेल पहले से पंजीकृत है। लॉग इन करें।",
@@ -104,7 +100,6 @@
   "errors.AI_UNAVAILABLE": "AI ऑफ़लाइन है — स्थानीय परिणाम दिखा रहे हैं।",
   "errors.NETWORK": "नेटवर्क समस्या — ऑनलाइन आने पर पुनः प्रयास होगा।",
   "errors.GENERIC": "कुछ गड़बड़ हुई। लॉग कर लिया गया है।",
-
   "landing.heroTitle": "कैंपस कतार जो आपके समय — और पृथ्वी — का सम्मान करती है।",
   "landing.heroSub": "हॉस्टल से ही टोकन लें, लाइव चलते देखें, और ठीक अपनी बारी पर पहुंचें। हर डिजिटल टोकन कागज़, ईंधन और घंटे बचाता है।",
   "landing.ctaStart": "शुरू करें",
@@ -123,7 +118,6 @@
   "landing.step1": "अपना खाता बनाएं",
   "landing.step2": "कतार चुनें और कहीं से भी जुड़ें",
   "landing.step3": "अपनी बारी पर पहुंचें",
-
   "dash.greeting": "नमस्ते, {name} 👋",
   "dash.liveToken": "आपका लाइव टोकन",
   "dash.noToken": "आप अभी किसी कतार में नहीं हैं।",
@@ -135,7 +129,6 @@
   "dash.announcements": "सूचनाएं",
   "dash.noAnnouncements": "अभी कोई सूचना नहीं।",
   "dash.activeQueuesNow": "अभी चल रही कतारें",
-
   "queues.title": "चालू कतारें",
   "queues.join": "कतार में जुड़ें",
   "queues.full": "पूर्ण",
@@ -155,7 +148,6 @@
   "queues.awayUntil": "जगह {time} तक सुरक्षित",
   "queues.priorityJoin": "प्राथमिकता चाहिए",
   "queues.priorityNote": "कर्मचारी सत्यापन करेंगे। हर 4 सामान्य टोकन पर अधिकतम 1 प्राथमिकता (निष्पक्ष सीमा)।",
-
   "status.title": "कतार स्थिति",
   "status.noActive": "कोई सक्रिय टोकन नहीं",
   "status.noActiveSub": "कतार में जुड़ें — यह स्क्रीन आपका लाइव रिमोट कंट्रोल बन जाएगी।",
@@ -177,7 +169,6 @@
   "status.downloadCard": "टोकन कार्ड डाउनलोड करें",
   "status.counterLabel": "काउंटर पर जाएं",
   "status.graceLeft": "{t} के भीतर पहुंचें वरना ऑटो-स्किप हो जाएंगे",
-
   "history.title": "मेरी कतारें",
   "history.activeNow": "अभी सक्रिय",
   "history.past": "इतिहास",
@@ -189,7 +180,6 @@
   "history.feedbackTitle": "यह विज़िट कैसी रही?",
   "history.commentPh": "वैकल्पिक — क्या अच्छा या बुरा लगा? (AI विश्लेषण से पहले गुमनाम किया जाता है)",
   "history.thanks": "धन्यवाद! फीडबैक दर्ज हो गया।",
-
   "prebook.title": "स्लॉट प्रीबुक करें",
   "prebook.sub": "समय आरक्षित करें, लाइन पूरी तरह छोड़ें। कम-भीड़ स्लॉट पहले — इनपर ग्रीन स्कोर बोनस मिलता है।",
   "prebook.pickQueue": "कतार",
@@ -209,7 +199,6 @@
   "prebook.converted": "बुकिंग टोकन #{n} बन गई",
   "prebook.bonusToast": "कम-भीड़ स्लॉट चुनने पर +{n} ग्रीन स्कोर!",
   "prebook.pastSlot": "यह समय निकल गया",
-
   "admin.dash.title": "कैंपस डैशबोर्ड",
   "admin.dash.kpiActive": "सक्रिय कतारें",
   "admin.dash.kpiWaiting": "अभी प्रतीक्षारत",
@@ -231,7 +220,6 @@
   "admin.dash.annPublished": "सूचना प्रभावित छात्रों तक तुरंत पहुंच गई।",
   "admin.dash.annQueue": "कतार",
   "admin.dash.accuracy": "भविष्यवाणी सटीकता",
-
   "admin.queues.title": "कतार प्रबंधन",
   "admin.queues.create": "नई कतार",
   "admin.queues.nlTitle": "एक पंक्ति में बताएं",
@@ -255,7 +243,6 @@
   "admin.queues.reopen": "दोबारा खोलें",
   "admin.queues.console": "काउंटर कंसोल खोलें",
   "admin.queues.autoClosed": "भरने पर ऑटो-पॉज़ — टोकन पूरे होते ही ऑटो-रीओपन।",
-
   "console.title": "काउंटर कंसोल",
   "console.callNext": "अगला टोकन बुलाएं",
   "console.servingNow": "सेवा जारी",
@@ -276,7 +263,6 @@
   "console.arrived": "पहुंचे",
   "console.staffing": "स्टाफिंग सलाहकार",
   "console.staffingHint": "पिछले 7 दिनों की M/M/c (Erlang-C) योजना — {h}:00 पर {c} काउंटर खोलें।",
-
   "users.title": "उपयोगकर्ता प्रबंधन",
   "users.searchPh": "नाम या ईमेल खोजें…",
   "users.role": "भूमिका",
@@ -287,7 +273,6 @@
   "users.delete": "हटाएं",
   "users.superOnly": "भूमिका बदलने या हटाने का अधिकार केवल सुपर-एडमिन को है।",
   "users.updated": "उपयोगकर्ता अपडेट हुआ।",
-
   "analytics.title": "विश्लेषण",
   "analytics.hourlyLoad": "प्रति घंटा भार (जारी टोकन)",
   "analytics.waitDist": "प्रतीक्षा-समय वितरण",
@@ -299,7 +284,6 @@
   "analytics.avgWait": "औसत प्रतीक्षा",
   "analytics.tokensToday": "आज के टोकन",
   "analytics.export": "टोकन CSV निर्यात",
-
   "green.title": "स्थिरता",
   "green.campusImpact": "कैंपस ग्रीन प्रभाव",
   "green.sheets": "कागज़ की शीट बचीं",
@@ -327,7 +311,6 @@
   "green.ecoDesc": "एनिमेशन बंद, डेमो सिम्युलेटर रुकवाता है और डिवाइस ऊर्जा बचाने हेतु रिफ्रेश काम घटाता है।",
   "green.reportTitle": "Q-Mate स्थिरता रिपोर्ट",
   "green.reportFooter": "Q-Mate 2.0 द्वारा स्थानीय रूप से निर्मित। कारक: 5 g CO₂/शीट, 713 g CO₂/kWh ग्रिड, 21 kg CO₂/वृक्ष-वर्ष।",
-
   "ai.health.title": "AI स्वास्थ्य",
   "ai.modeOnline": "AI: ऑनलाइन",
   "ai.modeFallback": "AI: फ़ॉलबैक मोड",
@@ -350,7 +333,6 @@
   "ai.cacheCleared": "कैश साफ़।",
   "ai.privacyNote": "नाम और ईमेल कभी डिवाइस से बाहर नहीं जाते — AI को केवल कतार मेटाडेटा और समग्र आंकड़े मिलते हैं।",
   "ai.noKeyNote": ".env में कुंजी नहीं है — हर AI फीचर स्थानीय इंजन पर चल रहा है। Gemini चालू करने के लिए .env में कुंजी डालें।",
-
   "audit.title": "ऑडिट लॉग",
   "audit.filterAll": "सभी क्रियाएं",
   "audit.actor": "कर्ता",
@@ -358,7 +340,6 @@
   "audit.target": "लक्ष्य",
   "audit.when": "कब",
   "audit.empty": "अभी कोई एडमिन क्रिया दर्ज नहीं।",
-
   "qbuddy.title": "Q-Buddy",
   "qbuddy.sub": "आपका कतार सहायक",
   "qbuddy.ph": "बोनाफाइड के लिए कौन सी कतार?",
@@ -368,11 +349,9 @@
   "qbuddy.chip1": "बोनाफाइड के लिए कौन सी कतार?",
   "qbuddy.chip2": "फीस के दस्तावेज़?",
   "qbuddy.chip3": "जाने का सबसे अच्छा समय?",
-
   "notfound.title": "पेज नहीं मिला",
   "notfound.sub": "यह लिंक कतार में कहीं खो गया।",
   "notfound.home": "Q-Mate पर वापस",
-
   "a11y.theme": "डार्क मोड टॉगल करें",
   "a11y.lang": "भाषा बदलें",
   "a11y.sidebar": "मुख्य नेविगेशन",
@@ -380,7 +359,6 @@
   "a11y.eco": "इको मोड",
   "a11y.close": "संवाद बंद करें",
   "a11y.skip": "सामग्री पर जाएं",
-
   "settings.title": "सेटिंग्स",
   "settings.profile": "प्रोफ़ाइल",
   "settings.prefs": "प्राथमिकताएं",
@@ -400,7 +378,6 @@
   "settings.pwa": "Q-Mate इंस्टॉल करें",
   "settings.pwaHint": "ऑफ़लाइन PWA के लिए ब्राउज़र मेनू → Install app करें।",
   "settings.saved": "सेटिंग्स सहेजी गईं।",
-
   "help.title": "सहायता और सामान्य प्रश्न",
   "help.q1": "वर्चुअल कतार कैसे काम करती है?",
   "help.a1": "कहीं से भी जुड़ें — टोकन नंबर मिलेगा। लाइव स्थिति और ETA देखें। बुलाए जाने पर ही पहुंचें। 5 मिनट तक Step Away करने पर भी जगह सुरक्षित रहती है।",
@@ -413,7 +390,6 @@
   "help.q5": "ग्रीन आंकड़े कहां से आते हैं?",
   "help.a5": "हर पूर्ण टोकन कागज़ टिकट, लाइन में खड़े रहने का HVAC भार और (दूर से जुड़ने पर) यात्रा बचाता है। कारक कॉन्फ़िगर करने योग्य हैं और स्थिरता रिपोर्ट पर दिखते हैं।",
   "help.contact": "फिर भी अटके? Q-Buddy से पूछें (नीचे-दाएं) या टोकन लेकर काउंटर जाएं।",
-
   "notif.calledT": "🎉 आपकी बारी — {code}",
   "notif.calledB": "कृपया अभी {counter} पर जाएं।",
   "notif.nearT": "लगभग बारी — {n} आगे",
@@ -432,5 +408,29 @@
   "notif.recallT": "स्मरण — {code}",
   "notif.recallB": "काउंटर फिर बुला रहा है। कृपया अभी आएं।",
   "notif.issuedT": "टोकन #{n} — {queue}",
-  "notif.issuedB": "आप कतार में हैं। बारी से पहले सूचित करेंगे।"
+  "notif.issuedB": "आप कतार में हैं। बारी से पहले सूचित करेंगे।",
+  "errors.OTP_REQUIRED": "आगे बढ़ने के लिए कृपया अपना ईमेल सत्यापित करें।",
+  "errors.OTP_INVALID": "यह सत्यापन कोड गलत या समाप्त है।",
+  "errors.OTP_MAX_ATTEMPTS": "बहुत अधिक गलत प्रयास। कृपया नया कोड मांगें।",
+  "errors.OTP_TOO_SOON": "नया कोड मांगने से पहले कृपया थोड़ी देर प्रतीक्षा करें।",
+  "errors.OTP_RATE_LIMITED": "बहुत अधिक कोड का अनुरोध किया गया। कृपया बाद में प्रयास करें।",
+  "errors.SMTP_UNAVAILABLE": "ईमेल डिलीवरी अस्थायी रूप से उपलब्ध नहीं है। कृपया शीघ्र पुनः प्रयास करें।",
+  "auth.verifyTitle": "अपना ईमेल सत्यापित करें",
+  "auth.verifySub": "हमने {email} पर 6-अंकों का कोड भेजा है। खाता बनाना पूरा करने के लिए उसे नीचे दर्ज करें।",
+  "auth.otpLabel": "6-अंकों का सत्यापन कोड",
+  "auth.verifyBtn": "सत्यापित करें और खाता बनाएं",
+  "auth.resendCode": "कोड पुनः भेजें",
+  "auth.resendIn": "नया कोड {n}s में",
+  "auth.changeEmail": "दूसरा ईमेल उपयोग करें",
+  "auth.verifiedToast": "ईमेल सत्यापित हुआ",
+  "auth.onscreenNotice": "ईमेल डिलीवरी अस्थायी रूप से उपलब्ध नहीं है — नीचे दिखाया गया कोड उपयोग करें।",
+  "auth.codeSentTo": "सत्यापन कोड {email} पर भेजा गया",
+  "auth.sending": "कोड भेजा जा रहा है…",
+  "settings.security": "सुरक्षा",
+  "settings.changePassword": "पासवर्ड बदलें",
+  "settings.currentPassword": "वर्तमान पासवर्ड",
+  "settings.newPassword": "नया पासवर्ड",
+  "settings.passwordChanged": "पासवर्ड अपडेट हुआ — आपके ईमेल पर पुष्टि भेजी गई है।",
+  "settings.emailAlerts": "ईमेल अलर्ट",
+  "settings.emailAlertsHint": "सुरक्षा और कतार-बारी के अलर्ट अपने सत्यापित ईमेल पर प्राप्त करें।"
 }

@@ -31,6 +31,7 @@ const RELEVANT = new Set([
   EVENTS.PREBOOK_CREATED,
   EVENTS.PREBOOK_CANCELLED,
   EVENTS.FEEDBACK_ADDED,
+  EVENTS.ANNOUNCEMENT,
   EVENTS.DATA_SEEDED,
 ]);
 
@@ -125,10 +126,8 @@ export const useQueueStore = create((set, get) => ({
  *  Local Dexie mode stays purely event-driven. */
 export function bindQueueStore() {
   if (unsubEvents) unsubEvents();
+  // ANNOUNCEMENT is part of RELEVANT — one subscription handles every event.
   unsubEvents = eventBus.on((msg) => {
-    if (msg.type === EVENTS.ANNOUNCEMENT) {
-      useQueueStore.getState().handleEvent({ ...msg, type: EVENTS.ANNOUNCEMENT });
-    }
     useQueueStore.getState().handleEvent(msg);
   });
   if (storage.kind === 'mongodb' && !cloudPollTimer && typeof document !== 'undefined') {

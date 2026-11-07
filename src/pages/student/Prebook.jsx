@@ -11,7 +11,7 @@ import { Select } from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import EmptyState from '../../components/common/EmptyState';
-import { todayStr } from '../../utils/format';
+import { todayStr, dateStrOf } from '../../utils/format';
 import { GREEN_POINTS } from '../../utils/constants';
 
 const LEVEL_TONE = { low: 'green', medium: 'amber', high: 'rose' };
@@ -106,9 +106,10 @@ export default function Prebook() {
 
   const doReschedule = async (pb) => {
     // simple +7 days / same time move (slot grid above handles fine-tuning)
-    const d = new Date(pb.date);
-    d.setDate(d.getDate() + 1);
-    const nextDate = d.toISOString().slice(0, 10);
+    // parse the date string as LOCAL midnight — never as UTC — then add 7 days
+    const d = new Date(`${pb.date}T00:00:00`);
+    d.setDate(d.getDate() + 7);
+    const nextDate = dateStrOf(d.getTime());
     try {
       await reschedule(pb.id, user.id, nextDate, pb.time);
       toast.success(t('prebook.bookedToast', { time: pb.time, date: nextDate }));
@@ -159,7 +160,7 @@ export default function Prebook() {
               max={(() => {
                 const d = new Date();
                 d.setDate(d.getDate() + 7);
-                return d.toISOString().slice(0, 10);
+                return dateStrOf(d.getTime());
               })()}
               onChange={(e) => setDate(e.target.value || todayStr())}
               className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-600 dark:bg-slate-900/60 dark:text-white"

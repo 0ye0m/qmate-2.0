@@ -2,7 +2,6 @@
   "app.name": "Q-Mate 2.0",
   "app.tagline": "Wait Less, Do More.",
   "app.sub": "Sustainable smart-campus queues — virtual tokens, live ETAs, zero paper.",
-
   "nav.dashboard": "Dashboard",
   "nav.activeQueues": "Active Queues",
   "nav.myQueues": "My Queues",
@@ -20,7 +19,6 @@
   "nav.auditLog": "Audit Log",
   "nav.logout": "Log out",
   "nav.menu": "Menu",
-
   "common.loading": "Loading…",
   "common.retry": "Retry",
   "common.save": "Save",
@@ -62,7 +60,6 @@
   "common.you": "You",
   "common.view": "View",
   "common.copied": "Copied",
-
   "auth.loginTitle": "Welcome back",
   "auth.loginSub": "Log in to manage your queues.",
   "auth.signupTitle": "Create your account",
@@ -80,7 +77,6 @@
   "auth.demoAdmin": "Fill admin demo",
   "auth.demoStudent": "Fill student demo",
   "auth.passwordMismatch": "Passwords do not match",
-
   "errors.INVALID_CREDENTIALS": "Wrong email or password. Please try again.",
   "errors.ACCOUNT_LOCKED": "Account locked after 5 failed attempts. Try again in {min} min.",
   "errors.EMAIL_TAKEN": "This email is already registered. Try logging in.",
@@ -104,7 +100,6 @@
   "errors.AI_UNAVAILABLE": "AI is offline — showing local results instead.",
   "errors.NETWORK": "Network problem — retrying when back online.",
   "errors.GENERIC": "Something went wrong. It has been logged.",
-
   "landing.heroTitle": "The campus queue that respects your time — and the planet.",
   "landing.heroSub": "Take a token from your hostel room, watch it move live, walk in exactly when it's your turn. Every digital token saves paper, fuel and hours.",
   "landing.ctaStart": "Get started",
@@ -123,7 +118,6 @@
   "landing.step1": "Create your account",
   "landing.step2": "Pick a queue & join from anywhere",
   "landing.step3": "Walk in when it's your turn",
-
   "dash.greeting": "Hello, {name} 👋",
   "dash.liveToken": "Your live token",
   "dash.noToken": "You're not in any queue right now.",
@@ -135,7 +129,6 @@
   "dash.announcements": "Announcements",
   "dash.noAnnouncements": "No announcements yet.",
   "dash.activeQueuesNow": "Queues running now",
-
   "queues.title": "Active Queues",
   "queues.join": "Join queue",
   "queues.full": "Full",
@@ -155,7 +148,6 @@
   "queues.awayUntil": "Place held until {time}",
   "queues.priorityJoin": "Request priority",
   "queues.priorityNote": "Staff will verify. Max 1 priority per 4 standard tokens (fair-play cap).",
-
   "status.title": "Queue Status",
   "status.noActive": "No active token",
   "status.noActiveSub": "Join a queue and this screen becomes your live remote control.",
@@ -177,7 +169,6 @@
   "status.downloadCard": "Download token card",
   "status.counterLabel": "Go to counter",
   "status.graceLeft": "Report within {t} or you'll be auto-skipped",
-
   "history.title": "My Queues",
   "history.activeNow": "Active now",
   "history.past": "History",
@@ -189,7 +180,6 @@
   "history.feedbackTitle": "How was this visit?",
   "history.commentPh": "Optional — what went well or wrong? (anonymized before AI analysis)",
   "history.thanks": "Thanks! Feedback recorded.",
-
   "prebook.title": "Prebook a slot",
   "prebook.sub": "Reserve a time, skip the line completely. Low-crowd slots first — they earn bonus Green Score.",
   "prebook.pickQueue": "Queue",
@@ -208,7 +198,6 @@
   "prebook.checkin": "Check in with this booking",
   "prebook.converted": "Booking converted to token #{n}",
   "prebook.bonusToast": "+{n} Green Score for choosing a low-crowd slot!",
-
   "admin.dash.title": "Campus Dashboard",
   "admin.dash.kpiActive": "Active queues",
   "admin.dash.kpiWaiting": "Waiting now",
@@ -230,7 +219,6 @@
   "admin.dash.annPublished": "Announcement delivered to affected students instantly.",
   "admin.dash.annQueue": "Queue",
   "admin.dash.accuracy": "Prediction accuracy",
-
   "admin.queues.title": "Manage Queues",
   "admin.queues.create": "New queue",
   "admin.queues.nlTitle": "Describe it in one line",
@@ -254,7 +242,6 @@
   "admin.queues.reopen": "Reopen",
   "admin.queues.console": "Open counter console",
   "admin.queues.autoClosed": "Auto-paused when full — reopens automatically as tokens complete.",
-
   "console.title": "Counter Console",
   "console.callNext": "Call next token",
   "console.servingNow": "Being served",
@@ -275,7 +262,6 @@
   "console.arrived": "Arrived",
   "console.staffing": "Staffing advisor",
   "console.staffingHint": "M/M/c (Erlang-C) plan from last 7 days — open {c} counters at {h}:00.",
-
   "users.title": "Manage Users",
   "users.searchPh": "Search name or email…",
   "users.role": "Role",
@@ -286,7 +272,6 @@
   "users.delete": "Delete",
   "users.superOnly": "Only super-admins can change roles or delete users.",
   "users.updated": "User updated.",
-
   "analytics.title": "Analytics",
   "analytics.hourlyLoad": "Hourly load (tokens issued)",
   "analytics.waitDist": "Wait-time distribution",
@@ -298,7 +283,6 @@
   "analytics.avgWait": "Avg wait",
   "analytics.tokensToday": "Tokens today",
   "analytics.export": "Export tokens CSV",
-
   "green.title": "Sustainability",
   "green.campusImpact": "Campus green impact",
   "green.sheets": "Paper sheets saved",
@@ -326,7 +310,6 @@
   "green.ecoDesc": "Kills animations, pauses the demo simulator and trims refresh work to cut device energy.",
   "green.reportTitle": "Q-Mate Sustainability Report",
   "green.reportFooter": "Generated locally by Q-Mate 2.0 — digital queue platform. Factors: 5 g CO₂/sheet, 713 g CO₂/kWh grid, 21 kg CO₂/tree-year.",
-
   "ai.health.title": "AI Health",
   "ai.modeOnline": "AI: Online",
   "ai.modeFallback": "AI: Fallback mode",
@@ -349,7 +332,6 @@
   "ai.cacheCleared": "Cache cleared.",
   "ai.privacyNote": "Names and emails never leave this device — AI receives only queue metadata and aggregates.",
   "ai.noKeyNote": "No keys in .env — every AI feature is running on its local heuristic engine. Add keys to .env to enable Gemini.",
-
   "audit.title": "Audit Log",
   "audit.filterAll": "All actions",
   "audit.actor": "Actor",
@@ -357,7 +339,6 @@
   "audit.target": "Target",
   "audit.when": "When",
   "audit.empty": "No admin actions recorded yet.",
-
   "qbuddy.title": "Q-Buddy",
   "qbuddy.sub": "Your queue assistant",
   "qbuddy.ph": "Which queue for bonafide?",
@@ -367,11 +348,9 @@
   "qbuddy.chip1": "Which queue for bonafide?",
   "qbuddy.chip2": "Documents for fees?",
   "qbuddy.chip3": "Best time to visit?",
-
   "notfound.title": "Page not found",
   "notfound.sub": "That link took a wrong turn in the queue.",
   "notfound.home": "Back to Q-Mate",
-
   "a11y.theme": "Toggle dark mode",
   "a11y.lang": "Change language",
   "a11y.sidebar": "Main navigation",
@@ -379,7 +358,6 @@
   "a11y.eco": "Eco Mode",
   "a11y.close": "Close dialog",
   "a11y.skip": "Skip to content",
-
   "settings.title": "Settings",
   "settings.profile": "Profile",
   "settings.prefs": "Preferences",
@@ -399,7 +377,6 @@
   "settings.pwa": "Install Q-Mate",
   "settings.pwaHint": "Use your browser menu → Install app for the offline-first PWA.",
   "settings.saved": "Settings saved.",
-
   "help.title": "Help & FAQ",
   "help.q1": "How does the virtual queue work?",
   "help.a1": "Join from anywhere — you get a token number. Watch your live position and ETA. Walk in only when you're called. Your place is safe even if you Step Away for up to 5 minutes.",
@@ -412,7 +389,6 @@
   "help.q5": "Where do the green numbers come from?",
   "help.a5": "Every completed token avoids a paper ticket, HVAC load while standing in line, and (when you join remotely) a commute. Factors are configurable and shown on the Sustainability report.",
   "help.contact": "Still stuck? Ask Q-Buddy (bottom-right) or visit the counter block with your token.",
-
   "notif.calledT": "🎉 It's your turn — {code}",
   "notif.calledB": "Please go to {counter} now.",
   "notif.nearT": "Almost there — {n} ahead",
@@ -431,5 +407,29 @@
   "notif.recallT": "Reminder — {code}",
   "notif.recallB": "Counter is calling you again. Please report now.",
   "notif.issuedT": "Token #{n} — {queue}",
-  "notif.issuedB": "You're in the queue. We'll alert you before your turn."
+  "notif.issuedB": "You're in the queue. We'll alert you before your turn.",
+  "errors.OTP_REQUIRED": "Please verify your email address to continue.",
+  "errors.OTP_INVALID": "That verification code is incorrect or has expired.",
+  "errors.OTP_MAX_ATTEMPTS": "Too many incorrect attempts. Please request a new code.",
+  "errors.OTP_TOO_SOON": "Please wait a moment before requesting a new code.",
+  "errors.OTP_RATE_LIMITED": "Too many codes requested. Please try again later.",
+  "errors.SMTP_UNAVAILABLE": "Email delivery is temporarily unavailable. Please try again shortly.",
+  "auth.verifyTitle": "Verify your email",
+  "auth.verifySub": "We sent a 6-digit code to {email}. Enter it below to finish creating your account.",
+  "auth.otpLabel": "6-digit verification code",
+  "auth.verifyBtn": "Verify & create account",
+  "auth.resendCode": "Resend code",
+  "auth.resendIn": "Resend available in {n}s",
+  "auth.changeEmail": "Use a different email",
+  "auth.verifiedToast": "Email verified",
+  "auth.onscreenNotice": "Email delivery is temporarily unavailable — use the verification code shown below.",
+  "auth.codeSentTo": "A verification code was sent to {email}",
+  "auth.sending": "Sending code…",
+  "settings.security": "Security",
+  "settings.changePassword": "Change password",
+  "settings.currentPassword": "Current password",
+  "settings.newPassword": "New password",
+  "settings.passwordChanged": "Password updated — a confirmation has been sent to your email.",
+  "settings.emailAlerts": "Email alerts",
+  "settings.emailAlertsHint": "Security and queue-turn alerts on your verified email address."
 }

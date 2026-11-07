@@ -58,18 +58,25 @@ Optional AI (the app is fully functional without it):
 
 | Role | Email | Password |
 |---|---|---|
-| Super Admin | `admin@qmate.local` | `Admin@123` |
-| Student | `student@qmate.local` | `Student@123` |
+| Super Admin | `saloniwankhade19@gmail.com` | `Admin@123` |
+| Student | `saloniwankhade19@gmail.com` | `Student@123` |
 
-Plus 8 simulator students (`sim1@qmate.local` … `sim8@qmate.local`) used by the
+Both provisioned demo roles share the owner's verified mailbox — sign-in
+matches on **email + password**, so the two accounts coexist safely. Plus
+8 simulator students (`sim1@qmate.local` … `sim8@qmate.local`) used by the
 Demo Simulator. First launch seeds a full 3-day campus into **MongoDB Atlas**:
 7 queues, ~600 historical + live tokens (analytics, prediction EWMA, green
 stats), prebooks, feedback, announcements and an audit trail. Passwords are
 PBKDF2-hashed before they ever reach the database.
 
-> ⚠️ Auth is simulated client-side (PBKDF2-hashed passwords, expiring sessions,
-> 5-strikes → 15-min lockout) — demonstration-grade security, not production
-> authentication.
+**Account security.** Passwords are PBKDF2-SHA256 hashed (150k iterations,
+per-user salt) with expiring sessions and a 5-strikes → 15-minute lockout.
+New sign-ups verify their email with a 6-digit one-time code (10-minute
+expiry, single use, rate-limited) and the account is created server-side
+against a signed verification receipt. Security events — first sign-in from
+a new device, lockouts, password changes — plus realtime queue-turn alerts
+are delivered by email alongside in-app toasts, web notifications, sound
+and vibration.
 
 ---
 
@@ -78,8 +85,8 @@ PBKDF2-hashed before they ever reach the database.
 Each tab keeps **its own session** (per-tab `sessionStorage`), so one tab can be
 the student and the other the admin in the same browser:
 
-1. **Tab A** — open the app, log in as `student@qmate.local / Student@123`.
-2. **Tab B** — open the app in a second tab, log in as `admin@qmate.local / Admin@123`.
+1. **Tab A** — open the app, log in as `saloniwankhade19@gmail.com / Student@123`.
+2. **Tab B** — open the app in a second tab, log in as `saloniwankhade19@gmail.com / Admin@123`.
 3. In Tab A: **Active Queues → Join queue** → tick the document checklist →
    **Confirm & get token**. You get e.g. `ADM-200`.
 4. Open **Queue Status** in Tab A: giant token, position, people-ahead,

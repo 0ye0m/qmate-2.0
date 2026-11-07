@@ -1,13 +1,20 @@
 /**
- * Client-side simulated auth: PBKDF2 hashes, expiring sessions in IndexedDB,
- * 5-strikes → 15-minute lockout, role-based access. All rules enforced by
+ * Client-side auth: PBKDF2 hashes, expiring sessions in IndexedDB,
+ * 5-strikes → 15-minute lockout, role-based access. Rules are enforced by
  * authService; guards in app/guards.jsx read the auth store.
+ *
+ * Cloud mode (shared MongoDB store): registration is verified with an
+ * email OTP and the account is created server-side with a signed receipt;
+ * several provisioned roles may share one address, so sign-in matches on
+ * email + password across every account on that address.
  */
 import { storage } from '../storage';
 import { eventBus, EVENTS } from '../realtime/EventBus';
 import { hashPassword, verifyPassword } from './password';
 import { AppError } from '../../utils/errors';
 import { uid } from '../../utils/id';
+import { notify } from '../mail/mailService';
+import { registerOnServer } from '../mail/mailService';
 import {
   LOCKOUT_MS,
   MAX_FAILED_ATTEMPTS,
@@ -52,9 +59,15 @@ function publicUser(u) {
 function validateRegistration({ name, email, password, department, year }) {
   if (!name || String(name).trim().length < 2) throw new AppError('VALIDATION', { field: 'name' });
   if (!email || !EMAIL_RE.test(String(email).toLowerCase())) throw new AppError('BAD_EMAIL');
-  if (!password || String(password).length < 8) throw new AppError('WEAK_PASSWORD');
+  // Policy: 8+ characters with at least one letter and one digit.
+  const pw = String(password || '');
+  if (pw.length < 8 || !/[a-zA-Z]/.test(pw) || !/\d/.test(pw)) throw new AppError('WEAK_PASSWORD');
   if (!department) throw new AppError('VALIDATION', { field: 'department' });
   if (!year) throw new AppError('VALIDATION', { field: 'year' });
+}
+
+function strongPassword(pw) {
+  return String(pw || '').length >= 8 && /[a-zA-Z]/.test(String(pw)) && /\d/.test(String(pw));
 }
 
 async function createSession(userId) {
@@ -64,9 +77,49 @@ async function createSession(userId) {
   return session;
 }
 
-export async function register({ name, email, password, department, year, role = 'student' }) {
+/**
+ * Create an account.
+ *  • Cloud mode — the email must carry a verified OTP receipt; the account
+ *    record is created by the server (receipt-gated) and mirrored locally.
+ *  • Offline mode — local creation with the same validation rules (the
+ *    email-verification tier is unavailable by definition offline).
+ * Self-service sign-up always creates a student account; staff roles are
+ * provisioned by an administrator.
+ */
+export async function register({ name, email, password, department, year, verification }) {
   validateRegistration({ name, email, password, department, year });
   const normEmail = String(email).toLowerCase().trim();
+
+  if (storage.kind === 'mongodb') {
+    if (!verification?.receipt) {
+      throw new AppError('OTP_REQUIRED');
+    }
+    let user;
+    try {
+      user = await registerOnServer({
+        name: String(name).trim(),
+        email: normEmail,
+        password: String(password),
+        department,
+        year: Number(year) || 1,
+        verification: { email: normEmail, receipt: verification.receipt },
+      });
+    } catch (err) {
+      const code = String(err?.message || '');
+      if (code === 'EMAIL_TAKEN') throw new AppError('EMAIL_TAKEN');
+      if (code === 'RECEIPT_INVALID') throw new AppError('OTP_INVALID');
+      if (code === 'WEAK_PASSWORD') throw new AppError('WEAK_PASSWORD');
+      if (code === 'VALIDATION') throw new AppError('VALIDATION', { field: err?.detail });
+      if (code === 'MAIL_UNREACHABLE' || /^MAIL_/.test(code)) throw new AppError('OTP_REQUIRED');
+      throw new AppError('GENERIC');
+    }
+    const session = await createSession(user.id);
+    rememberTabSession(session.token);
+    eventBus.publish(EVENTS.USER_UPDATED, { userId: user.id, reason: 'registered' });
+    return { user, session };
+  }
+
+  // offline fallback — same rules, local store
   const existing = await storage.table('users').where('email').equals(normEmail).first();
   if (existing) throw new AppError('EMAIL_TAKEN');
   const { hash, salt } = await hashPassword(password);
@@ -76,7 +129,7 @@ export async function register({ name, email, password, department, year, role =
     email: normEmail,
     passHash: hash,
     salt,
-    role,
+    role: 'student',
     department,
     year: Number(year) || 1,
     status: 'active',
@@ -85,6 +138,7 @@ export async function register({ name, email, password, department, year, role =
     greenScore: 0,
     badges: [],
     prefs: { sound: true, travelMinutes: 10 },
+    emailVerified: false,
     createdAt: Date.now(),
   };
   await storage.put('users', user);
@@ -94,41 +148,80 @@ export async function register({ name, email, password, department, year, role =
   return { user: publicUser(user), session };
 }
 
+/**
+ * Sign in. Several provisioned accounts (student, admin, super-admin) may
+ * legitimately share one address, so every account on the address is tried
+ * against the supplied password; failed attempts count against the address
+ * as a whole (an attacker cannot tell which account they are hitting).
+ */
 export async function login(email, password) {
   if (!email || !password) throw new AppError('INVALID_CREDENTIALS');
   const normEmail = String(email).toLowerCase().trim();
-  const user = await storage.table('users').where('email').equals(normEmail).first();
-  if (!user) throw new AppError('INVALID_CREDENTIALS');
+  const candidates = (await storage.table('users').where('email').equals(normEmail).toArray()) || [];
+  if (!candidates.length) throw new AppError('INVALID_CREDENTIALS');
 
   const now = Date.now();
-  if (user.lockedUntil && user.lockedUntil > now) {
-    throw new AppError('ACCOUNT_LOCKED', { until: user.lockedUntil, minutes: Math.ceil((user.lockedUntil - now) / 60000) });
-  }
-  if (user.status === 'locked' && !user.lockedUntil) {
-    throw new AppError('ACCOUNT_LOCKED', { until: Infinity, minutes: null, byAdmin: true });
+  const unlocked = candidates.filter((u) => !(u.lockedUntil && u.lockedUntil > now) && u.status !== 'locked');
+  const locked = candidates.filter((u) => !unlocked.includes(u));
+
+  if (!unlocked.length) {
+    const soonest = Math.min(...locked.map((u) => (u.status === 'locked' ? Infinity : u.lockedUntil || Infinity)));
+    if (soonest === Infinity) {
+      throw new AppError('ACCOUNT_LOCKED', { byAdmin: true, until: Infinity, minutes: null });
+    }
+    throw new AppError('ACCOUNT_LOCKED', {
+      until: soonest,
+      minutes: Math.ceil((soonest - now) / 60000),
+    });
   }
 
-  const ok = await verifyPassword(password, user.passHash, user.salt);
-  if (!ok) {
-    const attempts = (user.failedAttempts || 0) + 1;
-    const patch = { failedAttempts: attempts };
-    if (attempts >= MAX_FAILED_ATTEMPTS) {
-      patch.lockedUntil = now + LOCKOUT_MS;
-      patch.failedAttempts = 0; // reset counter after triggering lock
+  let matched = null;
+  for (const user of unlocked) {
+    if (await verifyPassword(password, user.passHash, user.salt)) {
+      matched = user;
+      break;
     }
-    await storage.table('users').update(user.id, patch);
-    if (patch.lockedUntil) {
-      throw new AppError('ACCOUNT_LOCKED', { until: patch.lockedUntil, minutes: Math.ceil(LOCKOUT_MS / 60000) });
-    }
-    throw new AppError('INVALID_CREDENTIALS', { attemptsLeft: MAX_FAILED_ATTEMPTS - attempts });
   }
 
-  if (user.failedAttempts || user.lockedUntil) {
-    await storage.table('users').update(user.id, { failedAttempts: 0, lockedUntil: 0 });
+  if (!matched) {
+    // count the strike against every account on this address
+    const results = await Promise.all(
+      unlocked.map(async (user) => {
+        const attempts = (user.failedAttempts || 0) + 1;
+        const patch = { failedAttempts: attempts };
+        let lockedNow = false;
+        if (attempts >= MAX_FAILED_ATTEMPTS) {
+          patch.lockedUntil = now + LOCKOUT_MS;
+          patch.failedAttempts = 0; // reset counter after triggering lock
+          lockedNow = true;
+        }
+        await storage.table('users').update(user.id, patch);
+        if (lockedNow) {
+          notify('account-locked', {
+            to: user.email,
+            dedupeKey: `lock:${user.id}:${now}`,
+            data: { minutes: Math.ceil(LOCKOUT_MS / 60000), time: new Date().toLocaleString('en-IN') },
+          }).catch(() => {});
+        }
+        return { lockedNow };
+      })
+    );
+    if (results.some((r) => r.lockedNow)) {
+      throw new AppError('ACCOUNT_LOCKED', { until: now + LOCKOUT_MS, minutes: Math.ceil(LOCKOUT_MS / 60000) });
+    }
+    throw new AppError('INVALID_CREDENTIALS', { attemptsLeft: MAX_FAILED_ATTEMPTS - (unlocked[0]?.failedAttempts || 1) });
   }
-  const session = await createSession(user.id);
+
+  if (matched.failedAttempts || matched.lockedUntil) {
+    await storage.table('users').update(matched.id, { failedAttempts: 0, lockedUntil: 0 });
+  }
+  const session = await createSession(matched.id);
   rememberTabSession(session.token);
-  return { user: publicUser(user), session };
+
+  // security alert on first sign-in from a device (fire-and-forget)
+  notify('login-new-device', { userId: matched.id, to: matched.email }).catch(() => {});
+
+  return { user: publicUser(matched), session };
 }
 
 /** Restore session on boot. Tab-local session wins so two tabs can hold
@@ -186,6 +279,25 @@ export async function updatePrefs(userId, prefsPatch) {
   if (!user) return null;
   const prefs = { ...(user.prefs || {}), ...prefsPatch };
   await storage.table('users').update(userId, { prefs });
+  return publicUser(await storage.get('users', userId));
+}
+
+/** Change password: re-verify the current one first, then re-hash and
+ *  confirm by email. Every failure mode throws a typed AppError. */
+export async function changePassword(userId, currentPassword, nextPassword) {
+  if (!strongPassword(nextPassword)) throw new AppError('WEAK_PASSWORD');
+  const user = await storage.get('users', userId);
+  if (!user) throw new AppError('TOKEN_NOT_FOUND');
+  const ok = await verifyPassword(String(currentPassword || ''), user.passHash, user.salt);
+  if (!ok) throw new AppError('INVALID_CREDENTIALS');
+  const { hash, salt } = await hashPassword(nextPassword);
+  await storage.table('users').update(userId, { passHash: hash, salt, failedAttempts: 0, lockedUntil: 0 });
+  notify('password-changed', {
+    to: user.email,
+    dedupeKey: `pwchange:${userId}:${Date.now()}`,
+    data: { time: new Date().toLocaleString('en-IN') },
+  }).catch(() => {});
+  eventBus.publish(EVENTS.USER_UPDATED, { userId, reason: 'password' });
   return publicUser(await storage.get('users', userId));
 }
 

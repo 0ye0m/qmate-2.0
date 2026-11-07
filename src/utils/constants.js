@@ -162,7 +162,7 @@ export const GEMINI = {
 export const SIMULATOR_INTERVAL_MS = 7000;
 export const AUDIT_LOG_MAX = 500;
 export const ANNOUNCEMENT_FEED_MAX = 30;
-export const SEED_VERSION = 5;
+export const SEED_VERSION = 6;
 
 export const TOKEN_NUMBER_START = 101;
 

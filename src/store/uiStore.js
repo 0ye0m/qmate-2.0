@@ -13,6 +13,7 @@ export const useUiStore = create(
       lang: 'en',
       eco: false,
       sound: true,
+      emailAlerts: true,
       travelMinutes: 10,
       simulator: false,
       notifAsked: false,
@@ -34,6 +35,9 @@ export const useUiStore = create(
       setSound(sound) {
         set({ sound });
       },
+      setEmailAlerts(on) {
+        set({ emailAlerts: !!on });
+      },
       setTravelMinutes(minutes) {
         set({ travelMinutes: Math.max(1, Math.min(120, Number(minutes) || 1)) });
       },
@@ -53,6 +57,7 @@ export const useUiStore = create(
         lang: s.lang,
         eco: s.eco,
         sound: s.sound,
+        emailAlerts: s.emailAlerts,
         travelMinutes: s.travelMinutes,
         simulator: s.simulator,
         notifAsked: s.notifAsked,

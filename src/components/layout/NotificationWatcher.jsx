@@ -12,6 +12,7 @@ import {
 } from '../../services/notifications/notificationService';
 import { autoSkipExpired } from '../../services/queue/queueService';
 import { ROLE_RANK } from '../../utils/constants';
+import { notify } from '../../services/mail/mailService';
 import { localizedText } from '../../services/queue/announcementService';
 import { recent as recentAnnouncements } from '../../services/queue/announcementService';
 import { storage } from '../../services/storage';
@@ -34,6 +35,7 @@ export default function NotificationWatcher() {
 
   const user = useAuthStore((s) => s.user);
   const sound = useUiStore((s) => s.sound);
+  const emailAlerts = useUiStore((s) => s.emailAlerts);
   const travelMinutes = useUiStore((s) => s.travelMinutes);
   const notifAsked = useUiStore((s) => s.notifAsked);
   const setNotifAsked = useUiStore((s) => s.setNotifAsked);
@@ -66,6 +68,14 @@ export default function NotificationWatcher() {
       if (firedRef.current.size > 200) firedRef.current.clear();
       alertAll({ title, body, tag: opts.tag || key, sound: opts.sound ?? sound });
       toast(title, { icon: opts.icon || '🔔', duration: 6000 });
+      // email channel — realtime turn alerts reach the verified inbox too
+      if (emailAlerts && opts.email && user?.email) {
+        notify(opts.email.type, {
+          to: user.email,
+          dedupeKey: opts.email.dedupeKey || key,
+          data: opts.email.data || {},
+        }).catch(() => {});
+      }
     };
 
     // periodic leave-now + ahead-count checks (cheap, local only)
@@ -112,11 +122,24 @@ export default function NotificationWatcher() {
             break;
           case EVENTS.TOKEN_CALLED:
             if (p.userId === user.id) {
+              const qCalled = await storage.get('queues', p.queueId).catch(() => null);
               fire(
                 `called-${p.tokenId}`,
                 t('notif.calledT', { code: p.code || `#${p.number}` }),
                 t('notif.calledB', { counter: p.counterLabel || 'the counter' }),
-                { tag: 'called', icon: '🎉' }
+                {
+                  tag: 'called',
+                  icon: '🎉',
+                  email: {
+                    type: 'token-called',
+                    dedupeKey: `called:${p.tokenId}`,
+                    data: {
+                      code: p.code || `#${p.number}`,
+                      queue: qCalled?.name || '',
+                      counter: p.counterLabel || '—',
+                    },
+                  },
+                }
               );
             }
             break;
@@ -197,7 +220,7 @@ export default function NotificationWatcher() {
       if (noShowTimer) clearInterval(noShowTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, sound, travelMinutes, lang, t]);
+  }, [user?.id, sound, emailAlerts, travelMinutes, lang, t]);
 
   return null;
 }

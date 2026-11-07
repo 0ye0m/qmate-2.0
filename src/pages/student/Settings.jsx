@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { BellRing, UserRound } from 'lucide-react';
+import { BellRing, UserRound, KeyRound, MailCheck } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
 import { useI18n, LANGS } from '../../i18n/I18nProvider';
-import { updateProfile } from '../../services/auth/authService';
+import { updateProfile, changePassword } from '../../services/auth/authService';
 import {
   notificationPermission,
   requestNotificationPermission,
 } from '../../services/notifications/notificationService';
+import { describeError } from '../../utils/errors';
 import Card, { SectionTitle } from '../../components/common/Card';
 import { Input, Select } from '../../components/common/Input';
 import Toggle from '../../components/common/Toggle';
@@ -22,6 +23,8 @@ export default function Settings() {
   const ui = useUiStore();
   const [form, setForm] = useState({ name: user.name, department: user.department, year: user.year });
   const [busy, setBusy] = useState(false);
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
+  const [pwBusy, setPwBusy] = useState(false);
   const perm = notificationPermission();
 
   const saveProfile = async () => {
@@ -34,6 +37,24 @@ export default function Settings() {
       toast.error(t('errors.GENERIC'));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const submitPassword = async (e) => {
+    e.preventDefault();
+    if (pw.next !== pw.confirm) {
+      toast.error(t('auth.passwordMismatch'));
+      return;
+    }
+    setPwBusy(true);
+    try {
+      await changePassword(user.id, pw.current, pw.next);
+      setPw({ current: '', next: '', confirm: '' });
+      toast.success(t('settings.passwordChanged'));
+    } catch (err) {
+      toast.error(t(`errors.${describeError(err)}`));
+    } finally {
+      setPwBusy(false);
     }
   };
 
@@ -146,6 +167,58 @@ export default function Settings() {
               {perm === 'granted' ? t('settings.enabled') : perm === 'denied' ? t('settings.blocked') : t('settings.enable')}
             </Button>
           </div>
+        </div>
+      </Card>
+
+      <Card>
+        <SectionTitle title={t('settings.security')} />
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+              {t('settings.emailAlerts')}
+              <span className="block text-xs font-normal text-slate-400">{t('settings.emailAlertsHint')}</span>
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <MailCheck size={16} className="text-brand-500" aria-hidden="true" />
+              <Toggle checked={ui.emailAlerts} onChange={ui.setEmailAlerts} id="email-alerts" label={ui.emailAlerts ? 'ON' : 'OFF'} />
+            </span>
+          </div>
+          <form onSubmit={submitPassword} className="space-y-4" noValidate>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Input
+                label={t('settings.currentPassword')}
+                name="currentPassword"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={pw.current}
+                onChange={(e) => setPw((p) => ({ ...p, current: e.target.value }))}
+              />
+              <Input
+                label={t('settings.newPassword')}
+                name="nextPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={pw.next}
+                onChange={(e) => setPw((p) => ({ ...p, next: e.target.value }))}
+                hint="8+ characters · letters & numbers"
+              />
+              <Input
+                label={t('auth.confirmPassword')}
+                name="confirmPassword2"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={pw.confirm}
+                onChange={(e) => setPw((p) => ({ ...p, confirm: e.target.value }))}
+              />
+            </div>
+            <Button size="sm" type="submit" loading={pwBusy} disabled={!pw.current || !pw.next}>
+              <KeyRound size={14} aria-hidden="true" />
+              {t('settings.changePassword')}
+            </Button>
+          </form>
         </div>
       </Card>
 

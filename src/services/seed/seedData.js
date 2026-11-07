@@ -1,14 +1,16 @@
 /**
  * Seed definitions — a realistic mid-size campus. Passwords for seeded
  * demo accounts are documented in the README (never committed anywhere
- * else). Sim students (sim1–sim8) exist so the Demo Simulator and live
- * "Now Serving" board have real people to work with.
+ * else). The platform owner's address fronts the provisioned demo roles
+ * (student + super-admin share one verified mailbox); sim students
+ * (sim1–sim8) exist so the Demo Simulator and live "Now Serving" board
+ * have real people to work with.
  */
 export const SEED_USERS = [
   {
     key: 'admin',
     name: 'Dr. R. Kulkarni',
-    email: 'admin@qmate.local',
+    email: 'saloniwankhade19@gmail.com',
     password: 'Admin@123',
     role: 'super-admin',
     department: 'CSE',
@@ -17,7 +19,7 @@ export const SEED_USERS = [
   {
     key: 'student',
     name: 'Saloni Wankhade',
-    email: 'student@qmate.local',
+    email: 'saloniwankhade19@gmail.com',
     password: 'Student@123',
     role: 'student',
     department: 'CSE',

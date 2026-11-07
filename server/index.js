@@ -23,7 +23,21 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { randomUUID } from 'node:crypto';
 import { connectMongo, getDb, mongoPing } from './mongo.js';
+import {
+  ALERT_TYPES,
+  MAIL_FROM,
+  checkDeviceAndAlert,
+  checkReceipt,
+  ensureMailIndexes,
+  hashPasswordServer,
+  normEmail,
+  sendAlert,
+  sendOtp,
+  smtpAvailable,
+  verifyOtp,
+} from './mail.js';
 
 const PORT = Number(process.env.QMATE_API_PORT || 4000);
 const HOST = process.env.QMATE_API_HOST || '127.0.0.1';
@@ -48,6 +62,123 @@ const TABLES = {
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '4mb' }));
+
+/* ── mail & verification tier (parity with the embedded app-server API) ─ */
+
+const mailFail = (res, err) => {
+  const status = typeof err?.status === 'number' ? err.status : 500;
+  return res.status(status).json({ ok: false, error: err?.message || 'SERVER_ERROR', detail: err?.detail });
+};
+
+app.get('/api/mail/health', async (req, res) => {
+  try {
+    await ensureMailIndexes();
+    const health = await smtpAvailable();
+    res.json({ ok: true, smtp: health.smtp, from: MAIL_FROM.replace(/<.*>/, '').trim() || 'QMATE', modes: { otp: true, alerts: health.smtp === 'available' } });
+  } catch (err) {
+    mailFail(res, err);
+  }
+});
+
+app.post('/api/mail/otp/send', async (req, res) => {
+  try {
+    await ensureMailIndexes();
+    const out = await sendOtp(req.body?.email, req.body?.purpose || 'signup', req.body?.name, req.ip);
+    res.json(out);
+  } catch (err) {
+    mailFail(res, err);
+  }
+});
+
+app.post('/api/mail/otp/verify', async (req, res) => {
+  try {
+    await ensureMailIndexes();
+    const out = await verifyOtp(req.body?.email, req.body?.purpose || 'signup', req.body?.code);
+    res.json({ ok: true, ...out });
+  } catch (err) {
+    mailFail(res, err);
+  }
+});
+
+app.post('/api/mail/register', async (req, res) => {
+  try {
+    await ensureMailIndexes();
+    const name = String(req.body?.name || '').trim();
+    const email = normEmail(req.body?.email);
+    const password = String(req.body?.password || '');
+    const department = req.body?.department;
+    const year = Number(req.body?.year) || 1;
+    const receipt = req.body?.verification?.receipt;
+    const verifiedEmail = normEmail(req.body?.verification?.email);
+
+    if (name.length < 2) throw Object.assign(new Error('VALIDATION'), { status: 400, detail: 'name' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw Object.assign(new Error('BAD_EMAIL'), { status: 400 });
+    if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
+      throw Object.assign(new Error('WEAK_PASSWORD'), { status: 400 });
+    }
+    if (!department) throw Object.assign(new Error('VALIDATION'), { status: 400, detail: 'department' });
+    if (verifiedEmail !== email || !checkReceipt(email, 'signup', receipt)) {
+      throw Object.assign(new Error('RECEIPT_INVALID'), { status: 401 });
+    }
+
+    const db = getDb();
+    const existing = await db.collection('users').findOne({ email });
+    if (existing) throw Object.assign(new Error('EMAIL_TAKEN'), { status: 409 });
+
+    const { hash, salt } = hashPasswordServer(password);
+    const user = {
+      id: `usr-${randomUUID().replace(/-/g, '').slice(0, 20)}`,
+      name,
+      email,
+      passHash: hash,
+      salt,
+      role: 'student',
+      department,
+      year,
+      status: 'active',
+      failedAttempts: 0,
+      lockedUntil: 0,
+      greenScore: 0,
+      badges: [],
+      prefs: { sound: true, travelMinutes: 10 },
+      emailVerified: true,
+      createdAt: Date.now(),
+    };
+    await db.collection('users').insertOne({ _id: user.id, ...user });
+    await db.collection('auditLog').insertOne({
+      id: `aud-${randomUUID().replace(/-/g, '').slice(0, 20)}`,
+      ts: Date.now(),
+      actorId: user.id,
+      actorEmail: user.email,
+      action: 'auth.register',
+      targetType: 'user',
+      targetId: user.id,
+      details: { method: 'email-otp', verified: true },
+    });
+    sendAlert('welcome', email, { name }, `welcome:${user.id}`).catch(() => undefined);
+
+    const { passHash: _p, salt: _s, ...pub } = user;
+    res.json({ ok: true, user: pub });
+  } catch (err) {
+    mailFail(res, err);
+  }
+});
+
+app.post('/api/mail/notify', async (req, res) => {
+  try {
+    await ensureMailIndexes();
+    const type = String(req.body?.type || '');
+    if (!ALERT_TYPES.includes(type)) return res.status(400).json({ ok: false, error: 'BAD_ALERT_TYPE' });
+    if (type === 'login-new-device' && req.body?.userId) {
+      const known = await checkDeviceAndAlert(String(req.body.userId), normEmail(req.body?.to), req.body?.device || {});
+      return res.json({ ok: true, newDevice: !known });
+    }
+    const out = await sendAlert(type, req.body?.to, req.body?.data || {}, req.body?.dedupeKey ? String(req.body.dedupeKey) : undefined);
+    res.json({ ok: true, ...out });
+  } catch (err) {
+    mailFail(res, err);
+  }
+});
 
 /* ── helpers ──────────────────────────────────────────────────────────── */
 
@@ -111,6 +242,8 @@ app.get('/', (req, res) => {
       'DELETE /api/db/:table/:key',
       'DELETE /api/db/:table?confirm=qmate-clear',
       'POST   /api/db/transaction',
+      'GET    /api/mail/health',
+      'POST   /api/mail/otp/send · otp/verify · register · notify',
     ],
   });
 });
@@ -298,7 +431,12 @@ app.use((req, res) => {
 
 async function ensureIndexes(db) {
   const jobs = [
-    db.collection('users').createIndex({ email: 1 }, { unique: true }),
+    (async () => {
+      // users.email is intentionally NON-unique: one owner may hold several
+      // provisioned roles (student + admin + super-admin) on one address.
+      try { await db.collection('users').dropIndex('email_1'); } catch { /* absent */ }
+      return db.collection('users').createIndex({ email: 1 });
+    })(),
     db.collection('tokens').createIndex({ queueId: 1 }),
     db.collection('tokens').createIndex({ userId: 1 }),
     db.collection('tokens').createIndex({ queueId: 1, status: 1 }),
