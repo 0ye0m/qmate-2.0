@@ -36,6 +36,22 @@ export default function ScannerModal({ open, onClose, onResult }) {
     return undefined;
   }, [mode]);
 
+  /**
+   * Keyboard guard: if focus is torn off the code field programmatically
+   * (a stray re-render elsewhere in the app), the mobile keyboard would
+   * slam shut mid-typing. Reclaim focus only when focus fell OUTSIDE the
+   * dialog (body / null) — never when the user deliberately moved it to
+   * another control (tab switch, Confirm, close), and never after close.
+   */
+  const handleManualBlur = (e) => {
+    if (!open || mode !== 'manual') return;
+    const next = e.relatedTarget;
+    if (next && next.closest?.('[role=dialog]')) return; // deliberate move inside the dialog
+    requestAnimationFrame(() => {
+      if (open && mode === 'manual') manualRef.current?.focus?.();
+    });
+  };
+
   // Every open starts clean: Scan tab, empty field, no stale camera error.
   useEffect(() => {
     if (open) {
@@ -198,8 +214,12 @@ export default function ScannerModal({ open, onClose, onResult }) {
             label={t('console.manual')}
             placeholder={t('console.manualPh')}
             autoComplete="off"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
             inputMode="text"
             enterKeyHint="go"
+            onBlur={handleManualBlur}
             value={manual}
             onChange={(e) => setManual(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submitManual()}

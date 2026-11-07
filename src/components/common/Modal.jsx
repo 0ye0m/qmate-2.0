@@ -5,11 +5,20 @@ import { useI18n } from '../../i18n/I18nProvider';
 /**
  * Accessible modal: role=dialog, Esc to close, backdrop click, autofocus
  * of first focusable element, focus return on close.
+ *
+ * Focus is applied ONCE when the dialog opens. The effect deliberately
+ * does NOT depend on `onClose` — callers pass a fresh inline arrow on
+ * every render, and live data (queue events, simulator ticks) re-renders
+ * parents constantly. Re-running the effect would steal focus back to the
+ * first element and force the mobile keyboard shut mid-typing. The latest
+ * callback is kept in a ref so Esc / trap / close always stay current.
  */
 export default function Modal({ open, onClose, title, children, footer, size = 'md' }) {
   const { t } = useI18n();
   const ref = useRef(null);
   const lastFocus = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -18,7 +27,7 @@ export default function Modal({ open, onClose, title, children, footer, size = '
     const first = node?.querySelector('input, select, textarea, button:not([data-close])');
     first?.focus();
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Escape') onCloseRef.current?.();
       if (e.key === 'Tab' && node) {
         const focusables = node.querySelectorAll(
           'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])'
@@ -43,7 +52,8 @@ export default function Modal({ open, onClose, title, children, footer, size = '
       document.body.style.overflow = '';
       lastFocus.current?.focus?.();
     };
-  }, [open, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   if (!open) return null;
   const width = size === 'lg' ? 'max-w-2xl' : size === 'xl' ? 'max-w-4xl' : 'max-w-lg';
