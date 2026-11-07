@@ -76,6 +76,8 @@
   "auth.noAccount": "कैंपस पर नए हैं?",
   "auth.demoAdmin": "एडमिन डेमो भरें",
   "auth.demoStudent": "स्टूडेंट डेमो भरें",
+  "auth.keepSignedIn": "इस डिवाइस पर साइन इन रहें",
+  "auth.keepSignedInHint": "डिफ़ॉल्ट रूप से बंद — टैब बंद करने पर लॉग आउट हो जाएँगे। केवल अपने निजी फ़ोन पर टिक करें।",
   "auth.passwordMismatch": "पासवर्ड मेल नहीं खाते",
   "errors.INVALID_CREDENTIALS": "ईमेल या पासवर्ड गलत है। फिर कोशिश करें।",
   "errors.ACCOUNT_LOCKED": "5 बार गलत प्रयास के बाद खाता लॉक है। {min} मिनट में फिर कोशिश करें।",
@@ -252,6 +254,13 @@
   "console.scan": "QR चेक-इन स्कैन",
   "console.manual": "कोड हाथ से दर्ज करें",
   "console.manualPh": "जैसे: EXF-104",
+  "scanner.tabScan": "QR स्कैन",
+  "scanner.tabManual": "कोड डालें",
+  "scanner.startingCamera": "कैमरा चालू हो रहा है…",
+  "scanner.cameraError": "कैमरा उपलब्ध नहीं है",
+  "scanner.useManualInstead": "इसके बजाय कोड डालें",
+  "scanner.scanHint": "कैमरे को छात्र के QR कोड पर लगाएँ — चेक-इन अपने आप हो जाएगा।",
+  "scanner.manualHint": "छात्र की स्क्रीन पर दिखा टोकन कोड टाइप करें।",
   "console.complete": "पूर्ण",
   "console.skip": "छोड़ें",
   "console.recall": "दोबारा बुलाएं",
@@ -432,5 +441,9 @@
   "settings.newPassword": "नया पासवर्ड",
   "settings.passwordChanged": "पासवर्ड अपडेट हुआ — आपके ईमेल पर पुष्टि भेजी गई है।",
   "settings.emailAlerts": "ईमेल अलर्ट",
-  "settings.emailAlertsHint": "सुरक्षा और कतार-बारी के अलर्ट अपने सत्यापित ईमेल पर प्राप्त करें।"
+  "settings.emailAlertsHint": "सुरक्षा और कतार-बारी के अलर्ट अपने सत्यापित ईमेल पर प्राप्त करें।",
+  "settings.signOutOthers": "अन्य डिवाइस से साइन आउट करें",
+  "settings.signOutOthersHint": "दूसरे फ़ोन, टैब और PC पर खुले सभी Q-Mate सेशन समाप्त करें।",
+  "settings.signOutOthersDone": "{n} अन्य सेशन साइन आउट किए गए",
+  "settings.sessionPolicy": "सेशन कभी डिवाइस से डिवाइस ट्रांसफर नहीं होते — नए फ़ोन, टैब या ब्राउज़र पर हर बार साइन इन ज़रूरी है।"
 }

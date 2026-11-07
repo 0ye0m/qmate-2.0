@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { BellRing, UserRound, KeyRound, MailCheck } from 'lucide-react';
+import { BellRing, LogOut, MailCheck, MonitorSmartphone, UserRound, KeyRound } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
 import { useI18n, LANGS } from '../../i18n/I18nProvider';
-import { updateProfile, changePassword } from '../../services/auth/authService';
+import {
+  updateProfile,
+  changePassword,
+  logoutOtherDevices,
+} from '../../services/auth/authService';
 import {
   notificationPermission,
   requestNotificationPermission,
@@ -19,12 +23,14 @@ import { DEPARTMENTS, YEARS } from '../../utils/constants';
 export default function Settings() {
   const { t, lang, setLang } = useI18n();
   const user = useAuthStore((s) => s.user);
+  const session = useAuthStore((s) => s.session);
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const ui = useUiStore();
   const [form, setForm] = useState({ name: user.name, department: user.department, year: user.year });
   const [busy, setBusy] = useState(false);
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
   const [pwBusy, setPwBusy] = useState(false);
+  const [signOutBusy, setSignOutBusy] = useState(false);
   const perm = notificationPermission();
 
   const saveProfile = async () => {
@@ -55,6 +61,18 @@ export default function Settings() {
       toast.error(t(`errors.${describeError(err)}`));
     } finally {
       setPwBusy(false);
+    }
+  };
+
+  const signOutEverywhereElse = async () => {
+    setSignOutBusy(true);
+    try {
+      const n = await logoutOtherDevices(user.id, session?.token);
+      toast.success(t('settings.signOutOthersDone', { n }));
+    } catch (err) {
+      toast.error(t('errors.GENERIC'));
+    } finally {
+      setSignOutBusy(false);
     }
   };
 
@@ -183,6 +201,20 @@ export default function Settings() {
               <Toggle checked={ui.emailAlerts} onChange={ui.setEmailAlerts} id="email-alerts" label={ui.emailAlerts ? 'ON' : 'OFF'} />
             </span>
           </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+              {t('settings.signOutOthers')}
+              <span className="block text-xs font-normal text-slate-400">{t('settings.signOutOthersHint')}</span>
+            </span>
+            <Button size="sm" variant="secondary" loading={signOutBusy} onClick={signOutEverywhereElse}>
+              <LogOut size={14} aria-hidden="true" />
+              {t('settings.signOutOthers')}
+            </Button>
+          </div>
+          <p className="-mt-3 flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
+            <MonitorSmartphone size={13} aria-hidden="true" />
+            {t('settings.sessionPolicy')}
+          </p>
           <form onSubmit={submitPassword} className="space-y-4" noValidate>
             <div className="grid gap-4 sm:grid-cols-3">
               <Input

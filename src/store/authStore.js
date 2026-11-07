@@ -36,8 +36,8 @@ export const useAuthStore = create((set, get) => ({
     });
   },
 
-  async login(email, password) {
-    const { user, session } = await authService.login(email, password);
+  async login(email, password, opts = {}) {
+    const { user, session } = await authService.login(email, password, opts);
     set({ user, session });
     return user;
   },

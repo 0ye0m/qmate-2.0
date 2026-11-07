@@ -16,6 +16,7 @@ export default function Login() {
   const login = useAuthStore((s) => s.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -24,7 +25,7 @@ export default function Login() {
     setBusy(true);
     setError(null);
     try {
-      await login(email, password);
+      await login(email, password, { remember });
       toast.success(`${t('auth.loginTitle')} 🌿`);
       const dest = location.state?.from || '/app';
       navigate(dest, { replace: true });
@@ -119,6 +120,21 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <label className="flex min-h-[44px] cursor-pointer items-start gap-2.5 pt-1 text-sm font-semibold text-slate-600 dark:text-slate-300">
+              <input
+                type="checkbox"
+                name="keepSignedIn"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span>
+                {t('auth.keepSignedIn')}
+                <span className="block text-xs font-normal text-slate-400 dark:text-slate-500">
+                  {t('auth.keepSignedInHint')}
+                </span>
+              </span>
+            </label>
             <Button type="submit" size="lg" className="w-full" loading={busy}>
               <LogIn size={17} aria-hidden="true" />
               {t('auth.signIn')}

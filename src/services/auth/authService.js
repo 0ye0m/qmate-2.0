@@ -18,6 +18,7 @@ import { registerOnServer } from '../mail/mailService';
 import {
   LOCKOUT_MS,
   MAX_FAILED_ATTEMPTS,
+  REMEMBER_TTL_MS,
   ROLE_RANK,
   SESSION_TTL_MS,
   SEED_VERSION,
@@ -25,7 +26,19 @@ import {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TAB_SESSION_KEY = 'qmate-tab-session';
+const DEVICE_SESSION_KEY = 'qmate-device-session';
 
+/**
+ * Session tokens are DEVICE-LOCAL and never shared through the cloud store:
+ *   • sessionStorage (per-tab) — always set on sign-in; dies with the tab,
+ *     so closing the app requires credentials again (student + admin tabs
+ *     can hold different roles side by side).
+ *   • localStorage (this browser only) — written ONLY when the user opts in
+ *     with "Keep me signed in"; never leaves the device.
+ * The `sessions` table in the shared store is used solely to validate
+ * expiry and to power "sign out everywhere" — restore() never adopts a
+ * session it did not find a local token for.
+ */
 function rememberTabSession(token) {
   try {
     sessionStorage.setItem(TAB_SESSION_KEY, token); // per-tab → student + admin tabs can coexist
@@ -45,6 +58,37 @@ function tabSessionToken() {
 function forgetTabSession() {
   try {
     sessionStorage.removeItem(TAB_SESSION_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function rememberDeviceSession(token, expiresAt) {
+  try {
+    localStorage.setItem(DEVICE_SESSION_KEY, JSON.stringify({ token, expiresAt }));
+  } catch {
+    /* localStorage unavailable (private mode) — tab session still works */
+  }
+}
+
+function deviceSessionToken() {
+  try {
+    const raw = localStorage.getItem(DEVICE_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.token || (parsed.expiresAt && parsed.expiresAt <= Date.now())) {
+      localStorage.removeItem(DEVICE_SESSION_KEY);
+      return null;
+    }
+    return parsed.token;
+  } catch {
+    return null;
+  }
+}
+
+function forgetDeviceSession() {
+  try {
+    localStorage.removeItem(DEVICE_SESSION_KEY);
   } catch {
     /* ignore */
   }
@@ -70,10 +114,18 @@ function strongPassword(pw) {
   return String(pw || '').length >= 8 && /[a-zA-Z]/.test(String(pw)) && /\d/.test(String(pw));
 }
 
-async function createSession(userId) {
+/**
+ * Create a session record. The record lives in the store (so expiry and
+ * "sign out everywhere" work), but ONLY the device that created it keeps
+ * the token. `remember` extends the TTL and persists the token in this
+ * browser's localStorage; otherwise the tab session alone holds it.
+ */
+async function createSession(userId, { remember = false } = {}) {
+  const ttl = remember ? REMEMBER_TTL_MS : SESSION_TTL_MS;
   const token = uid('ses-');
-  const session = { token, userId, createdAt: Date.now(), expiresAt: Date.now() + SESSION_TTL_MS };
+  const session = { token, userId, createdAt: Date.now(), expiresAt: Date.now() + ttl };
   await storage.put('sessions', session);
+  if (remember) rememberDeviceSession(token, session.expiresAt);
   return session;
 }
 
@@ -154,7 +206,7 @@ export async function register({ name, email, password, department, year, verifi
  * against the supplied password; failed attempts count against the address
  * as a whole (an attacker cannot tell which account they are hitting).
  */
-export async function login(email, password) {
+export async function login(email, password, { remember = false } = {}) {
   if (!email || !password) throw new AppError('INVALID_CREDENTIALS');
   const normEmail = String(email).toLowerCase().trim();
   const candidates = (await storage.table('users').where('email').equals(normEmail).toArray()) || [];
@@ -215,7 +267,7 @@ export async function login(email, password) {
   if (matched.failedAttempts || matched.lockedUntil) {
     await storage.table('users').update(matched.id, { failedAttempts: 0, lockedUntil: 0 });
   }
-  const session = await createSession(matched.id);
+  const session = await createSession(matched.id, { remember });
   rememberTabSession(session.token);
 
   // security alert on first sign-in from a device (fire-and-forget)
@@ -224,35 +276,62 @@ export async function login(email, password) {
   return { user: publicUser(matched), session };
 }
 
-/** Restore session on boot. Tab-local session wins so two tabs can hold
- *  different roles (the student + admin two-tab demo). */
+/**
+ * Restore session on boot — DEVICE-LOCAL ONLY.
+ * A token is accepted exclusively from (1) this tab's sessionStorage or
+ * (2) this browser's localStorage when the user opted into "Keep me signed
+ * in". The shared/cloud store is never scanned for other sessions, so a
+ * sign-in on one phone can never silently log in a different phone or PC.
+ */
 export async function restore() {
   const now = Date.now();
+
+  // best-effort cleanup of expired sessions in the store
   const sessions = await storage.getAll('sessions');
-  const live = sessions.filter((s) => s.expiresAt > now);
+  await Promise.all(
+    sessions.filter((s) => s.expiresAt <= now).map((s) => storage.delete('sessions', s.token).catch(() => {}))
+  );
 
-  const tabToken = tabSessionToken();
-  const tabSession = tabToken ? live.find((s) => s.token === tabToken) : null;
-  if (tabSession) {
-    const user = await storage.get('users', tabSession.userId);
-    if (user) return { user: publicUser(user), session: tabSession };
+  const validate = async (token) => {
+    if (!token) return null;
+    const session = await storage.get('sessions', token).catch(() => null);
+    if (!session || session.expiresAt <= now) {
+      return null;
+    }
+    const user = await storage.get('users', session.userId).catch(() => null);
+    if (!user || user.status === 'locked') return null;
+    return { user: publicUser(user), session };
+  };
+
+  // 1) this tab's own session (student + admin tabs can coexist)
+  const viaTab = await validate(tabSessionToken());
+  if (viaTab) return viaTab;
+
+  // 2) this device's remembered session (opt-in only)
+  const viaDevice = await validate(deviceSessionToken());
+  if (viaDevice) {
+    rememberTabSession(viaDevice.session.token);
+    return viaDevice;
   }
 
-  const fresh = live.sort((a, b) => b.createdAt - a.createdAt)[0];
-  if (!fresh) {
-    // best-effort cleanup of expired sessions
-    await Promise.all(sessions.filter((s) => s.expiresAt <= now).map((s) => storage.delete('sessions', s.token)));
-    return null;
-  }
-  rememberTabSession(fresh.token);
-  const user = await storage.get('users', fresh.userId);
-  if (!user) return null;
-  return { user: publicUser(user), session: fresh };
+  forgetTabSession();
+  forgetDeviceSession();
+  return null;
 }
 
 export async function logout(sessionToken) {
-  if (sessionToken) await storage.delete('sessions', sessionToken);
+  if (sessionToken) await storage.delete('sessions', sessionToken).catch(() => {});
   forgetTabSession();
+  forgetDeviceSession();
+}
+
+/** Security action: revoke every session this user holds on OTHER devices
+ *  (and other tabs). The current session is kept alive. */
+export async function logoutOtherDevices(userId, keepToken) {
+  const sessions = await storage.getAll('sessions');
+  const mine = sessions.filter((s) => s.userId === userId && s.token !== keepToken);
+  await Promise.all(mine.map((s) => storage.delete('sessions', s.token).catch(() => {})));
+  return mine.length;
 }
 
 /** Fresh copy of a user profile (password fields stripped). */

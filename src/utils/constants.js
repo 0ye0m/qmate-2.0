@@ -45,7 +45,8 @@ export const OK_OUTCOMES = ['completed', 'cancelled'];
 
 export const CALL_GRACE_MS = 90 * 1000; // student must check-in within 90s of being called
 export const STEP_AWAY_MS = 5 * 60 * 1000; // "Step Away" keeps your place for 5 minutes
-export const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12h session
+export const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12h session (per tab)
+export const REMEMBER_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days, only with opt-in "Keep me signed in"
 export const MAX_FAILED_ATTEMPTS = 5;
 export const LOCKOUT_MS = 15 * 60 * 1000; // 15-minute lockout
 export const PBKDF2_ITERATIONS = 150000;

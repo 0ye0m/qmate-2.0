@@ -76,6 +76,8 @@
   "auth.noAccount": "New to campus?",
   "auth.demoAdmin": "Fill admin demo",
   "auth.demoStudent": "Fill student demo",
+  "auth.keepSignedIn": "Keep me signed in on this device",
+  "auth.keepSignedInHint": "Off by default — closing the tab signs you out. Tick only on your personal phone.",
   "auth.passwordMismatch": "Passwords do not match",
   "errors.INVALID_CREDENTIALS": "Wrong email or password. Please try again.",
   "errors.ACCOUNT_LOCKED": "Account locked after 5 failed attempts. Try again in {min} min.",
@@ -251,6 +253,13 @@
   "console.scan": "Scan QR check-in",
   "console.manual": "Enter code manually",
   "console.manualPh": "e.g. EXF-104",
+  "scanner.tabScan": "Scan QR",
+  "scanner.tabManual": "Enter code",
+  "scanner.startingCamera": "Starting camera…",
+  "scanner.cameraError": "Camera unavailable",
+  "scanner.useManualInstead": "Enter code manually instead",
+  "scanner.scanHint": "Point the camera at the student's QR code — check-in is automatic.",
+  "scanner.manualHint": "Type the token code shown on the student's screen.",
   "console.complete": "Complete",
   "console.skip": "Skip",
   "console.recall": "Recall",
@@ -431,5 +440,9 @@
   "settings.newPassword": "New password",
   "settings.passwordChanged": "Password updated — a confirmation has been sent to your email.",
   "settings.emailAlerts": "Email alerts",
-  "settings.emailAlertsHint": "Security and queue-turn alerts on your verified email address."
+  "settings.emailAlertsHint": "Security and queue-turn alerts on your verified email address.",
+  "settings.signOutOthers": "Sign out other devices",
+  "settings.signOutOthersHint": "Revoke every Q-Mate session on other phones, tabs and PCs.",
+  "settings.signOutOthersDone": "Signed out {n} other session(s)",
+  "settings.sessionPolicy": "Sessions never transfer between devices — signing in is always required on a new phone, tab or browser."
 }
